@@ -1,4 +1,4 @@
-# Decision Making Framework
+# ReuST-AI
 
 This web app is based on the Python code written by [Mussie Birhane](https://github.com/MussieBirhane)
 
