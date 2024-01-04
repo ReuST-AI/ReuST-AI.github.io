@@ -7,253 +7,327 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <title>Decision Making Framework</title>
+    <title>ReuST</title>
     <meta charset="utf-8" />
   </head>
   <body>
-    <div>
-      <img style="margin-top: -50px; width: 150px; height: auto" src="./assets/logo.png" alt="ReUseNET Logo" />
-      <label>Decision making framework for efficient end-of-life scenarios of structural steel elements</label>
-    </div>
-    <h2
-      title="This user dashboard evaluates the reuse potential of existing steel structures considering the logistic feasibility, the structural visual inspection, and the structural performance.
-      In addition, the user is provided with a simplified method to compute the life cycle assessment of any possible end-of-life scenario."
-    ></h2>
+    <!--<img style="margin-top: -50px; width: 150px; height: auto" src="./assets/logo.png" alt="ReUseNET Logo" />-->
 
-    <div id="Visual_Inspection" class="container" style="padding-bottom: 30px">
+    <div id="containerIntro">
+      <h1
+        title="This user dashboard evaluates the reuse potential of existing steel structures considering the logistic feasibility, the structural visual inspection, and the structural performance.
+      In addition, the user is provided with a simplified method to compute the life cycle assessment of any possible end-of-life scenario."
+      >
+        ReuST
+      </h1>
+      <div class="divider"></div>
+      <p>A decision making framework for efficient end-of-life scenarios of structural steel elements</p>
+    </div>
+
+    <div id="Visual_Inspection" class="container dropdown active">
       <h2
         title="This criteria is supplemented with an automated convolutional neural network (CNN) based image classification tool. Images can be uploaded and parameters related to corrosion, connection types and damage status are evaluated automatically."
-        style="margin: auto"
       >
         Load the Images of the Structure
       </h2>
 
-      <div style="display: flex; align-items: center">
-        <input type="file" multiple accept="image/*" id="choose-file" name="choose-file" onchange="getImageData(this)" />
-        <!-- <div style="display: flex" id="loader"></div> -->
+      <input type="file" multiple accept="image/*" id="choose-file" name="choose-file" onchange="getImageData(this)" />
+      <!-- <div style="display: flex" id="loader"></div> -->
+
+      <div id="image-container"></div>
+      <p id="Images_Summary">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
+
+      <button style="margin-bottom: 20px" id="submit-images" onclick="classifyImages()">Classify Images</button>
+
+      <label for="No_Image_Data"
+        >Don't have image files?
+        <input type="checkbox" name="checkboxGroup" id="No_Image_Data" value="" onchange="toggleOptions('No_Image_Data')" />
+      </label>
+
+      <div id="No_Image_Data_Container" class="inputs toggle">
+        <div class="input-items">
+          <label for="Connection_Type_Slider">Connection type [fully welded - fully bolted]?</label>
+          <div class="slider-wrapper">
+            <div class="Slider_Label" id="Slider_Label">0.625</div>
+            <input type="range" id="Connection_Type_Slider" name="Connection_Type_Slider" min="0.25" max="1.00" step="0.01" value="0.625" />
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span>0.25</span>
+            <span>1.00</span>
+          </div>
+        </div>
+
+        <div class="input-items">
+          <label for="Corroded">Is the element corroded?</label>
+          <select id="Corroded" name="Corroded">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="0">Yes</option>
+            <option value="1">No</option>
+          </select>
+        </div>
+
+        <div class="input-items">
+          <label for="Damaged">Is the element damaged or distorted?</label>
+          <select id="Damaged" name="Damaged">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="0">Yes</option>
+            <option value="1">No</option>
+          </select>
+        </div>
       </div>
 
-      <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
-        <p>Drag one or more files to this <i>drop zone</i>.</p>
-      </div>
+      <label for="Optional_VisualData"
+        >Do you have additional information on the building?
+        <input type="checkbox" name="checkboxGroup" id="Optional_VisualData" value="" onchange="toggleOptions('Optional_VisualData')" />
+      </label>
 
-      <div id="image-container" style="display: flex; overflow-x: auto; overflow-y: hidden"></div>
-      <p style="font-size: small" id="Images_Summary">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
-      <div id="submit-images-div" style="display: none; justify-content: left">
-        <button style="margin-bottom: 20px" id="submit-images" onclick="classifyImages()">Classify Images</button>
-      </div>
-      <input type="checkbox" name="Optional_VisualData" id="Optional_VisualData" value="" onchange="toggleSelectBoxes()" />
-      <label style="padding-right: 10%; padding-top: 0px; display: inline" for="Optional_VisualData"
-        >Do you have additional information on the building?</label
-      >
-      <div style="display: none; margin-top: 10px" class="inputs">
-        <div style="padding-right: 20px; display: table-cell">
+      <div id="Optional_VisualData_Container" class="inputs toggle">
+        <div class="input-items">
           <label for="Composite_Connection">Are there steel-concrete composite connections?</label>
-          <div>
-            <select id="Composite_Connection" name="Composite_Connection">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="0">Yes</option>
-              <option value="1">No</option>
-            </select>
-          </div>
+          <select id="Composite_Connection" name="Composite_Connection">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="0">Yes</option>
+            <option value="1">No</option>
+          </select>
+        </div>
 
+        <div class="input-items">
           <label for="Fire_Protection">Is there fire protection on the element?</label>
-          <div>
-            <select id="Fire_Protection" name="Fire_Protection">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Fire_Protection" name="Fire_Protection">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
         </div>
-        <div style="display: table-cell">
+
+        <div class="input-items">
           <label for="Sufficient_Amount">Availability of sufficient amount of potential reusable elements?</label>
-          <div>
-            <select id="Sufficient_Amount" name="Sufficient_Amount">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Sufficient_Amount" name="Sufficient_Amount">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
 
+        <div class="input-items">
           <label for="Geometry_Check">Does the element pass standard geometric check without modification?</label>
-          <div>
-            <select id="Geometry_Check" name="Geometry_Check">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Geometry_Check" name="Geometry_Check">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
         </div>
       </div>
     </div>
 
-    <div id="Logistic_Feasibility" class="container" style="padding-bottom: 30px">
-      <h2 style="margin: auto">Logistic Feasibility</h2>
+    <div id="Logistic_Feasibility" class="container dropdown">
+      <h2>Logistic Feasibility</h2>
       <div class="inputs">
-        <div style="padding-right: 20px; display: table-cell">
-          <label for="Item_Weight">Weight of the structural element:</label>
-          <div>
-            <select id="Item_Weight" name="Item_Weight">
-              <option value="" disabled selected hidden hidden>Please select</option>
-              <option value="1">Very light [< 0.1 ton]</option>
-              <option value="2">Light [0.1 - 0.2 ton]</option>
-              <option value="3">Heavy [0.2 - 0.5 ton]</option>
-              <option value="4">Very heavy [> 0.5 ton]</option>
-            </select>
-          </div>
-
-          <label for="Easy_Handle">Ease to handle, transport, store, and process?</label>
-          <div>
-            <select id="Easy_Handle" name="Easy_Handle">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-
-          <label for="Exist_Infrastructure">Availability of dismantle-sort-repair infrastructure </label>
-          <div>
-            <select id="Exist_Infrastructure" name="Exist_Infrastructure">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+        <div class="input-items">
+          <label for="Item_Weight">Weight of the structural element</label>
+          <select id="Item_Weight" name="Item_Weight">
+            <option value="" disabled selected hidden hidden>Please select</option>
+            <option value="1">Very light [< 0.1 ton]</option>
+            <option value="2">Light [0.1 - 0.2 ton]</option>
+            <option value="3">Heavy [0.2 - 0.5 ton]</option>
+            <option value="4">Very heavy [> 0.5 ton]</option>
+          </select>
         </div>
-        <div style="display: table-cell">
+
+        <div class="input-items">
+          <label for="Easy_Handle">Ease to handle, transport, store, and process?</label>
+          <select id="Easy_Handle" name="Easy_Handle">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+
+        <div class="input-items">
+          <label for="Exist_Infrastructure">Availability of dismantle-sort-repair infrastructure </label>
+          <select id="Exist_Infrastructure" name="Exist_Infrastructure">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+
+        <div class="input-items">
           <label for="Special_Protection">Special protection is needed for transportation? </label>
-          <div>
-            <select id="Special_Protection" name="Special_Protection">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="0">Yes</option>
-              <option value="1">No</option>
-            </select>
-          </div>
+          <select id="Special_Protection" name="Special_Protection">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="0">Yes</option>
+            <option value="1">No</option>
+          </select>
+        </div>
 
+        <div class="input-items">
           <label for="Dismantle_Phase">Dismantle phase is compatible with demolition work? </label>
-          <div>
-            <select id="Dismantle_Phase" name="Dismantle_Phase">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Dismantle_Phase" name="Dismantle_Phase">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
 
+        <div class="input-items">
           <label for="Storage_Availability"> Availability of storage</label>
-          <div>
-            <select id="Storage_Availability" name="Storage_Availability">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Storage_Availability" name="Storage_Availability">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
         </div>
       </div>
     </div>
 
-    <div id="Structural_Performance" class="container" style="padding-bottom: 30px">
+    <div id="Structural_Performance" class="container dropdown">
       <h2
         title="This criteria evaluates the parameters related to the mechanical and physical performance of each structural elements under consideration."
-        style="margin: auto"
       >
         Structural Performance
       </h2>
       <div class="inputs">
-        <div style="padding-right: 20px; display: table-cell">
+        <div class="input-items">
           <label for="Data_Quality">Quality of available data?</label>
-          <div>
-            <select id="Data_Quality" name="Data_Quality">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">No documentation</option>
-              <option value="2">Only drawing available</option>
-              <option value="3">Drawings and calculation report available</option>
-              <option value="4">All detailed documentation available</option>
-            </select>
-          </div>
-
-          <label for="Construction_Period">Is the building designed and constructed after year 2005?</label>
-          <div>
-            <select id="Construction_Period" name="Construction_Period">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-
-          <label for="Maintenance">Did the structure has maintenance before? </label>
-          <div>
-            <select id="Maintenance" name="Maintenance">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Data_Quality" name="Data_Quality">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">No documentation</option>
+            <option value="2">Only drawing available</option>
+            <option value="3">Drawings and calculation report available</option>
+            <option value="4">All detailed documentation available</option>
+          </select>
         </div>
 
-        <div style="display: table-cell">
-          <label for="Purpose">Is the structural element unique for its purpose? </label>
-          <div>
-            <select id="Purpose" name="Purpose">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="0">Yes</option>
-              <option value="1">No</option>
-            </select>
-          </div>
+        <div class="input-items">
+          <label for="Construction_Period">Is the building designed and constructed after year 2005?</label>
+          <select id="Construction_Period" name="Construction_Period">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
 
+        <div class="input-items">
+          <label for="Maintenance">Did the structure has maintenance before? </label>
+          <select id="Maintenance" name="Maintenance">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+
+        <div class="input-items">
+          <label for="Purpose">Is the structural element unique for its purpose? </label>
+          <select id="Purpose" name="Purpose">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="0">Yes</option>
+            <option value="1">No</option>
+          </select>
+        </div>
+
+        <div class="input-items">
           <label for="Testing">Is it possible to conduct sample testing? </label>
-          <div>
-            <select id="Testing" name="Testing">
-              <option value="" disabled selected hidden>Please select</option>
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
+          <select id="Testing" name="Testing">
+            <option value="" disabled selected hidden>Please select</option>
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
         </div>
       </div>
     </div>
 
-    <div id="Life_Cycle" class="container" style="padding-bottom: 30px">
+    <div id="Life_Cycle" class="container dropdown">
       <h2
         title="The life cycle assessment is reported based on a simplified embodied carbon computation from the cradle-to-cradle approach. For this, the weights of the structural steel elements and the associated carbon factors are considered."
-        style="margin: auto"
       >
         Life Cycle Assessment (LCA)
       </h2>
 
       <p>Please select how you prefer to input the weight of the elements.</p>
 
-      <div style="margin-bottom: 20px">
-        <input type="checkbox" name="Element_Weight" id="Element_Weight" value="" />
-        <label style="padding-right: 10%; padding-top: 0px; display: inline" for="Element_Weight"> Weight of single element</label>
-        <input type="checkbox" name="Element_Dim" id="Element_Dim" value="" />
-        <label style="padding-right: 10%; padding-top: 0px; display: inline" for="Element_Dim"> Dimension of single element</label>
-        <input type="checkbox" name="Bulk_Weight" id="Bulk_Weight" value="" />
-        <label style="padding-right: 10%; padding-top: 0px; display: inline" for="Bulk_Weight"> Bulk material weight</label>
+      <div class="inputs LCA">
+        <div class="input-items">
+          <label for="Element_Weight">
+            Weight of single element
+            <input onchange="updateCheckboxes('Element_Weight')" checked type="checkbox" name="checkboxGroup" id="Element_Weight" value=""
+          /></label>
+          <div id="Element_Weight_Container" style="display: table" class="inputs toggle">
+            <div class="input-items">
+              <label for="weight">Weight of single element (kg):</label>
+              <input type="number" id="weight" name="weight" placeholder="Enter weight (e.g., 150)" />
+            </div>
+
+            <div class="input-items">
+              <label for="items">Number of items:</label>
+              <input type="number" id="items" name="items" placeholder="Enter quantity (e.g., 50)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="input-items">
+          <label for="Element_Dim">
+            Dimension of single element
+            <input onchange="updateCheckboxes('Element_Dim')" type="checkbox" name="checkboxGroup" id="Element_Dim" value=""
+          /></label>
+          <div id="Element_Dim_Container" class="inputs toggle">
+            <div class="input-items">
+              <label for="height">Height of the element [mm]:</label>
+              <input type="number" id="height" name="height" placeholder="Enter height" />
+            </div>
+
+            <div class="input-items">
+              <label for="width">Width of the element [mm]:</label>
+              <input type="number" id="width" name="width" placeholder="Enter width" />
+            </div>
+
+            <div class="input-items">
+              <label for="length">Length of the element [m]:</label>
+              <input type="number" id="length" name="length" placeholder="Enter length" />
+            </div>
+
+            <div class="input-items">
+              <label for="unitWeight">Material unit weight [kg/m<sup>3</sup>]:</label>
+              <input type="number" id="unitWeight" name="unitWeight" placeholder="Enter unit weight" />
+            </div>
+
+            <div class="input-items">
+              <label for="quantity">Number of items:</label>
+              <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" />
+            </div>
+          </div>
+        </div>
+
+        <div class="input-items">
+          <label for="Bulk_Weight">
+            Bulk material weight <input onchange="updateCheckboxes('Bulk_Weight')" type="checkbox" name="checkboxGroup" id="Bulk_Weight" value=""
+          /></label>
+          <div id="Bulk_Weight_Container" class="inputs toggle">
+            <div class="input-items">
+              <label for="bulk_weight">Bulk weight of the material [kg]:</label>
+              <input type="number" id="bulk_weight" name="bulk_weight" placeholder="Enter weight" />
+            </div>
+          </div>
+        </div>
       </div>
-      <button id="Compute_Carbon">Compute the embodied carbon, kgCO<sub>2</sub>e</button>
+      <button onclick="calculateTotalWeight()" id="Compute_Carbon">Compute the embodied carbon, kgCO<sub>2</sub>e</button>
+      <div id="LCA_Result"></div>
     </div>
 
-    <div id="Suggestion" class="container" style="padding-bottom: 30px">
+    <div id="Suggestion" class="container">
       <h2
-        title="Based on the input of the information for each criteria i.e., logistic feasibility, structural visual inspection and structural performance,
-      the weighted sum of the parameters is presented in percentage. Accordingly, the weighted sum of each criteria is compared with the criteria
-      threshold value which is defined by the authors apriori.The criteria threshold value defined for logistic feasibility, structural visual
-      inspection and structural performance is 75%, 70% and 80%, respectively."
-        style="margin: auto"
+        title="Based on the input of the information for each criteria i.e., logistic feasibility, structural visual inspection and structural performance, the weighted sum of the parameters is presented in percentage. Accordingly, the weighted sum of each criteria is compared with the criteria threshold value which is defined by the authors apriori.The criteria threshold value defined for logistic feasibility, structural visual inspection and structural performance is 75%, 70% and 80%, respectively."
       >
-        Suggestion for the end-of-life scenario
+        Suggestion for the End-of-Life Scenario
       </h2>
-      <p></p>
-      <button id="suggest-button" onclick="Suggest()">Suggest</button>
-      <div style="display: none" id="percentages">
+      <div style="margin-left: 20px">
         <p id="Logistic"></p>
         <p id="Inspection"></p>
         <p id="Performance"></p>
       </div>
+      <label>Based on the input evaluation, the efficient end-of-life scenario is:</label>
+      <div id="Result"></div>
     </div>
-
-    <div id="Result">Based on the input evaluation, the efficient end-of-life scenario is:</div>
 
     <footer>
       <p>Contact: <a href="mailto:alper.kanyilmaz@polimi.it">Alper Kanyılmaz</a>, Murat Güven</p>
