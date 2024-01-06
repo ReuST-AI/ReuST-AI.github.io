@@ -28,14 +28,14 @@
       <h2
         title="This criteria is supplemented with an automated convolutional neural network (CNN) based image classification tool. Images can be uploaded and parameters related to corrosion, connection types and damage status are evaluated automatically."
       >
-        Load the Images of the Structure
+        Structural Visual Inspection
       </h2>
 
       <input type="file" multiple accept="image/*" id="choose-file" name="choose-file" onchange="getImageData(this)" />
       <!-- <div style="display: flex" id="loader"></div> -->
 
-      <div id="image-container"></div>
-      <p id="Images_Summary">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
+      <div id="image-container"><p id="loading-text">Waiting for images...</p></div>
+      <p id="Images_Summary" style="display: none">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
 
       <button style="margin-bottom: 20px" id="submit-images" onclick="classifyImages()">Classify Images</button>
 
@@ -250,7 +250,7 @@
         <div class="input-items">
           <label for="Element_Weight">
             Weight of single element
-            <input onchange="updateCheckboxes('Element_Weight')" checked type="checkbox" name="checkboxGroup" id="Element_Weight" value=""
+            <input onchange="toggleOptions('Element_Weight')" checked type="checkbox" name="checkboxGroup" id="Element_Weight" value=""
           /></label>
           <div id="Element_Weight_Container" style="display: table" class="inputs toggle">
             <div class="input-items">
@@ -268,7 +268,7 @@
         <div class="input-items">
           <label for="Element_Dim">
             Dimension of single element
-            <input onchange="updateCheckboxes('Element_Dim')" type="checkbox" name="checkboxGroup" id="Element_Dim" value=""
+            <input onchange="toggleOptions('Element_Dim')" type="checkbox" name="checkboxGroup" id="Element_Dim" value=""
           /></label>
           <div id="Element_Dim_Container" class="inputs toggle">
             <div class="input-items">
@@ -300,7 +300,7 @@
 
         <div class="input-items">
           <label for="Bulk_Weight">
-            Bulk material weight <input onchange="updateCheckboxes('Bulk_Weight')" type="checkbox" name="checkboxGroup" id="Bulk_Weight" value=""
+            Bulk material weight <input onchange="toggleOptions('Bulk_Weight')" type="checkbox" name="checkboxGroup" id="Bulk_Weight" value=""
           /></label>
           <div id="Bulk_Weight_Container" class="inputs toggle">
             <div class="input-items">
@@ -321,8 +321,8 @@
         Suggestion for the End-of-Life Scenario
       </h2>
       <div style="margin-left: 20px">
-        <p id="Logistic"></p>
         <p id="Inspection"></p>
+        <p id="Logistic"></p>
         <p id="Performance"></p>
       </div>
       <label>Based on the input evaluation, the efficient end-of-life scenario is:</label>

@@ -73,6 +73,7 @@ async function getImageData(element) {
   imageArray = [];
 
   const imageContainer = document.getElementById("image-container");
+  const loadingText = document.getElementById("loading-text");
   imageContainer.innerHTML = "";
 
   if (files.length > 0) {
@@ -94,6 +95,7 @@ async function getImageData(element) {
           });
           // Enable/disable the "Don't have image files?" checkbox based on whether images are loaded
           noImageDataCheckbox.disabled = imageArray.length > 0 ? true : false;
+          loadingText.style.display = imageArray.length > 0 ? "none" : "block";
         }
       };
 
@@ -171,8 +173,10 @@ async function classifyImages() {
   }
   // Wait for all promises to resolve
   Promise.all(promises).then(function () {
+    const sum = document.getElementById("Images_Summary");
     // Update the Images_Summary after all images are classified
-    document.getElementById("Images_Summary").innerText =
+    sum.style.display = "block"; // or "inline" or "inline-block" depending on your layout
+    sum.innerText =
       "Depending on the loaded images, " +
       round((N_Corroded_Images / N_Images) * 100, 1) +
       "% is corroded, " +
@@ -211,16 +215,21 @@ function Suggest() {
   }
 
   function Image_Classification_Performance() {
-    let Image_Classification_Performance =
-      1 * parseInt(Composite_Connection.value) +
-      1 * parseInt(Fire_Protection.value) +
-      2 * parseInt(Sufficient_Amount.value) +
-      2 * parseInt(Geometry_Check.value);
+    let Image_Classification_Performance = 0;
+    const optdata = document.getElementById("Optional_VisualData");
 
     if (noImageDataCheckbox.checked) {
       Image_Classification_Performance += 3 * Connection_Type_Slider.value + 4 * parseInt(Corroded.value) + 4 * parseInt(Damaged.value);
     } else {
       Image_Classification_Performance += 3 * (N_Bolted_Images / N_Images) + 4 * (N_Corroded_Images / N_Images) + 4 * (N_Damaged_Images / N_Images);
+    }
+
+    if (optdata && optdata.checked) {
+      Image_Classification_Performance +=
+        1 * parseInt(Composite_Connection.value) +
+        1 * parseInt(Fire_Protection.value) +
+        2 * parseInt(Sufficient_Amount.value) +
+        2 * parseInt(Geometry_Check.value);
     }
 
     let Image_Classification_Performance_Percentage = (Image_Classification_Performance / 17) * 100;
@@ -243,11 +252,14 @@ function Suggest() {
     return [Structural_Performance, Structural_Performance_Percentage, Structural_Performance_Status];
   }
 
-  let Inspection = document.getElementById("Inspection");
-  Inspection.style.display = "list-item";
-  Inspection.innerHTML =
-    "Structural visual inspection: " + round(Image_Classification_Performance()[1], 2) + "% | " + Image_Classification_Performance()[2];
+  console.log(Image_Classification_Performance());
 
+  if (imageArray.length || noImageDataCheckbox.checked > 0) {
+    let Inspection = document.getElementById("Inspection");
+    Inspection.style.display = "list-item";
+    Inspection.innerHTML =
+      "Structural visual inspection: " + round(Image_Classification_Performance()[1], 2) + "% | " + Image_Classification_Performance()[2];
+  }
   // Get all active dropdowns
   const activeSections = document.querySelectorAll(".container.dropdown.active h2");
 
@@ -257,15 +269,14 @@ function Suggest() {
   activeSections.forEach(function (activeSection) {
     const sectionText = activeSection.innerText;
     console.log(sectionText);
-    if (sectionText === "Logistic Feasibility") {
-      /* Logistic.style.display = "list-item"; */
+    if (sectionText === "Logistic Feasibility" && (imageArray.length > 0 || noImageDataCheckbox.checked)) {
+      Logistic.style.display = "list-item";
       Logistic.innerHTML = "Logistic feasibility: " + round(Logistic_Performance()[1], 2) + "% | " + Logistic_Performance()[2];
-    } else if (sectionText === "Structural Performance") {
-      /*  Performance.style.display = "list-item"; */
+    } else if (sectionText === "Structural Performance" && (imageArray.length > 0 || noImageDataCheckbox.checked)) {
+      Performance.style.display = "list-item";
       Performance.innerHTML = "Structural performance: " + round(Structural_Performance()[1], 2) + "% | " + Structural_Performance()[2];
     }
   });
-
   /*   document.getElementById("Logistic").innerHTML =
     "1) Logistic feasibility: " + round(Logistic_Performance_Percentage, 2) + "% | " + Logistic_Performance_Status;
 
@@ -308,27 +319,46 @@ function showHideElements() {
 }
 
 function toggleOptions(clickedCheckboxId) {
+  const checkboxes = ["Element_Weight", "Element_Dim", "Bulk_Weight"];
   let inputsDiv = document.querySelector("#" + clickedCheckboxId + "_Container");
   let checkbox = document.getElementById(clickedCheckboxId);
 
-  let optionalVisualDataCheckbox = document.getElementById("Optional_VisualData");
-  let optionalVisualDataContainer = document.getElementById("Optional_VisualData_Container");
-
-  if (checkbox.checked) {
-    inputsDiv.style.display = checkbox.checked ? "table" : "none";
-
-    // If the checkbox is the "Don't have image files?" checkbox, also check the "Do you have additional information on the building?" checkbox and show its container
-    if (clickedCheckboxId === "No_Image_Data") {
-      optionalVisualDataCheckbox.checked = true;
-      optionalVisualDataContainer.style.display = "table";
+  // Uncheck other checkboxes and hide their containers
+  checkboxes.forEach((checkboxId) => {
+    if (checkboxId !== clickedCheckboxId) {
+      let otherCheckbox = document.getElementById(checkboxId);
+      let otherContainer = document.getElementById(checkboxId + "_Container");
+      otherCheckbox.checked = false;
+      otherContainer.style.display = "none";
     }
-  } else {
-    // Uncheck the "Do you have additional information on the building?" checkbox and hide its container when "Don't have image files?" is unchecked
-    if (clickedCheckboxId === "No_Image_Data") {
-      optionalVisualDataCheckbox.checked = false;
-      optionalVisualDataContainer.style.display = "none";
+  });
+
+  // Show/hide the clicked checkbox's container
+  inputsDiv.style.display = checkbox.checked ? "table" : "none";
+
+  // Handle additional logic for the "No_Image_Data" checkbox
+  if (clickedCheckboxId === "No_Image_Data") {
+    let optionalVisualDataCheckbox = document.getElementById("Optional_VisualData");
+    let optionalVisualDataContainer = document.getElementById("Optional_VisualData_Container");
+    let fileInput = document.getElementById("choose-file");
+    const imageContainer = document.getElementById("image-container");
+    const submitImages = document.getElementById("submit-images");
+
+    if (checkbox.checked) {
+      /*       optionalVisualDataCheckbox.checked = true;
+      optionalVisualDataContainer.style.display = "table"; */
+      fileInput.disabled = true;
+      fileInput.style.display = "none";
+      imageContainer.style.display = "none";
+      submitImages.style.display = "none";
+    } else {
+      /*       optionalVisualDataCheckbox.checked = false;
+      optionalVisualDataContainer.style.display = "none"; */
+      fileInput.disabled = false;
+      fileInput.style.display = "flex";
+      imageContainer.style.display = "flex";
+      submitImages.style.display = "flex";
     }
-    inputsDiv.style.display = "none"; // Hide the container when unchecked
   }
 }
 
@@ -381,9 +411,23 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-let selectBoxes = document.querySelectorAll(".container select");
-selectBoxes.forEach(function (select) {
-  select.addEventListener("change", function () {
+document.addEventListener("DOMContentLoaded", function () {
+  let selectBoxes = document.querySelectorAll(".container select");
+  let slider = document.getElementById("Connection_Type_Slider");
+
+  function handleInputChange() {
     Suggest();
+  }
+
+  selectBoxes.forEach(function (select) {
+    select.addEventListener("change", handleInputChange);
   });
+
+  slider.addEventListener("input", handleInputChange);
 });
+
+/* selectBoxes.forEach(function (select) {
+  select.addEventListener("change", handleInputChange);
+});
+
+slider.addEventListener("input", handleInputChange); */
