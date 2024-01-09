@@ -34,8 +34,9 @@
       <input type="file" multiple accept="image/*" id="choose-file" name="choose-file" onchange="getImageData(this)" />
       <!-- <div style="display: flex" id="loader"></div> -->
 
-      <div id="image-container"><p id="loading-text">Waiting for images...</p></div>
-      <p id="Images_Summary" style="display: none">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
+      <div id="image-container">
+        <!-- <p id="loading-text">Waiting for images...</p> -->
+      </div>
 
       <button style="margin-bottom: 20px" id="submit-images" onclick="classifyImages()">Classify and Decide</button>
 
@@ -320,6 +321,8 @@
       >
         Suggestion for the End-of-Life Scenario
       </h2>
+      <p id="Images_Summary" style="display: none">Depending on the loaded images, 0% is corroded, 0% is bolted, 0% is damaged</p>
+
       <div style="margin-left: 20px">
         <p id="Inspection"></p>
         <p id="Logistic"></p>
@@ -330,7 +333,7 @@
     </div>
 
     <footer>
-      <p>Contact: <a href="mailto:alper.kanyilmaz@polimi.it">Alper Kanyılmaz</a>, Murat Güven</p>
+      <p>Contact: alper.kanyilmaz@polimi.it</p>
     </footer>
 
     <script src="sketch.js"></script>

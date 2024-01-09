@@ -66,6 +66,7 @@ function calculateTotalWeight() {
 }
 
 let noImageDataCheckbox = document.getElementById("No_Image_Data");
+let loadingText = document.getElementById("loading-text");
 async function getImageData(element) {
   // document.getElementById("loader").style.display = "flex";
   const files = element.files;
@@ -73,7 +74,6 @@ async function getImageData(element) {
   imageArray = [];
 
   const imageContainer = document.getElementById("image-container");
-  const loadingText = document.getElementById("loading-text");
   imageContainer.innerHTML = "";
 
   if (files.length > 0) {
@@ -218,6 +218,7 @@ function Suggest() {
     let Image_Classification_Performance = 0;
     const optdata = document.getElementById("Optional_VisualData");
 
+    let Image_Classification_Performance_Percentage = 0;
     if (noImageDataCheckbox.checked) {
       Image_Classification_Performance += 3 * Connection_Type_Slider.value + 4 * parseInt(Corroded.value) + 4 * parseInt(Damaged.value);
     } else {
@@ -230,9 +231,11 @@ function Suggest() {
         1 * parseInt(Fire_Protection.value) +
         2 * parseInt(Sufficient_Amount.value) +
         2 * parseInt(Geometry_Check.value);
+      Image_Classification_Performance_Percentage = (Image_Classification_Performance / 17) * 100;
+    } else {
+      Image_Classification_Performance_Percentage = (Image_Classification_Performance / 11) * 100;
     }
 
-    let Image_Classification_Performance_Percentage = (Image_Classification_Performance / 17) * 100;
     let Image_Classification_Performance_Status = Status(Image_Classification_Performance_Percentage, 70);
 
     return [Image_Classification_Performance, Image_Classification_Performance_Percentage, Image_Classification_Performance_Status];
