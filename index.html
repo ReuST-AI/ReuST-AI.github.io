@@ -5,6 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
 
     <link rel="stylesheet" type="text/css" href="style.css" />
     <title>ReuST</title>
@@ -32,13 +33,18 @@
       </h2>
 
       <input type="file" multiple accept="image/*" id="choose-file" name="choose-file" onchange="getImageData(this)" />
-      <!-- <div style="display: flex" id="loader"></div> -->
 
-      <div id="image-container">
-        <!-- <p id="loading-text">Waiting for images...</p> -->
+      <div
+        id="image-container"
+        onclick="document.getElementById('choose-file').click();"
+        ondrop="dropHandler(event)"
+        ondragover="dragOverHandler(event)"
+      >
+        <div id="upload-icon">
+          <img id="icon" src="https://cdn2.iconfinder.com/data/icons/ios-7-icons/50/upload-512.png" />
+        </div>
+        <label id="loading-text"><i>Click to upload images or drag them here</i></label>
       </div>
-
-      <button style="margin-bottom: 20px" id="submit-images" onclick="classifyImages()">Classify and Decide</button>
 
       <label for="No_Image_Data"
         >Don't have image files?
@@ -119,10 +125,15 @@
           </select>
         </div>
       </div>
+
+      <div style="display: flex; align-items: center; justify-content: center">
+        <button id="submit-images" onclick="classifyImages()">Classify and Decide</button>
+        <div id="loader" style="display: none; margin-left: 10px"></div>
+      </div>
     </div>
 
     <div id="Logistic_Feasibility" class="container dropdown">
-      <h2>Logistic Feasibility</h2>
+      <h2>Logistic Feasibility (Optional)</h2>
       <div class="inputs">
         <div class="input-items">
           <label for="Item_Weight">Weight of the structural element</label>
@@ -186,7 +197,7 @@
       <h2
         title="This criteria evaluates the parameters related to the mechanical and physical performance of each structural elements under consideration."
       >
-        Structural Performance
+        Structural Performance (Optional)
       </h2>
       <div class="inputs">
         <div class="input-items">
@@ -256,7 +267,7 @@
           <div id="Element_Weight_Container" style="display: table" class="inputs toggle">
             <div class="input-items">
               <label for="weight">Weight of single element (kg):</label>
-              <input type="number" id="weight" name="weight" placeholder="Enter weight (e.g., 150)" />
+              <input type="number" id="weight" name="weight" placeholder="Enter weight (e.g., 150 kg)" />
             </div>
 
             <div class="input-items">
@@ -311,7 +322,23 @@
           </div>
         </div>
       </div>
-      <button onclick="calculateTotalWeight()" id="Compute_Carbon">Compute the embodied carbon, kgCO<sub>2</sub>e</button>
+
+      <div class="inputs">
+        <div class="input-items">
+          <label title="Coefficent for the product stage A1-A3" for="C_A1-A3">Product stage A1-A3 Coefficent:</label>
+          <input type="number" id="C_A1-A3" value="1.13" step="0.01" placeholder="Enter coefficent (e.g., 1.13)" />
+        </div>
+        <div class="input-items">
+          <label title="Coefficent for the end of life stage C1-C4" for="C_C1-C4">End of life stage C1-C4 Coefficent:</label>
+          <input type="number" id="C_C1-C4" value="0.018" step="0.01" placeholder="Enter coefficent (e.g., 0.018)" />
+        </div>
+        <div class="input-items">
+          <label title="Coefficent for the reuse, recycle and recovery stage D" for="C_D">Reuse, recycle and recovery stage D Coefficent:</label>
+          <input type="number" id="C_D" value="-0.413" step="0.01" placeholder="Enter coefficent (e.g., -0.413)" />
+        </div>
+      </div>
+
+      <button onclick="calculateCarbon()" id="Compute_Carbon">Compute the embodied carbon, kgCO<sub>2</sub>e</button>
       <div id="LCA_Result"></div>
     </div>
 
@@ -330,6 +357,7 @@
       </div>
       <label>Based on the input evaluation, the efficient end-of-life scenario is:</label>
       <div id="Result"></div>
+      <p id="Overall" style="display: none"></p>
     </div>
 
     <footer>
