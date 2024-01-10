@@ -286,7 +286,7 @@ function Suggest() {
 
   function Logistic_Performance() {
     let Logistic_Performance =
-      3 * (1 - parseInt(Item_Weight.value) / 4) +
+      3 * (parseInt(Item_Weight.value) / 3) +
       3 * parseInt(Easy_Handle.value) +
       4 * parseInt(Exist_Infrastructure.value) +
       1 * parseInt(Special_Protection.value) +
@@ -301,7 +301,7 @@ function Suggest() {
 
   function Structural_Performance() {
     let Structural_Performance =
-      4 * (parseInt(Data_Quality.value) / 4) +
+      4 * (parseInt(Data_Quality.value) / 3) +
       2 * parseInt(Construction_Period.value) +
       3 * parseInt(Maintenance.value) +
       3 * parseInt(Purpose.value) +
@@ -312,8 +312,6 @@ function Suggest() {
 
     return [Structural_Performance, Structural_Performance_Percentage, Structural_Performance_Status];
   }
-
-  console.log(Structural_Visual_Inspection());
 
   let Inspection = document.getElementById("Inspection");
   let Logistic = document.getElementById("Logistic");
@@ -335,7 +333,6 @@ function Suggest() {
     if (sectionText === "Logistic Feasibility (Optional)") {
       //&& (imageArray.length > 0 || noImageDataCheckbox.checked)
       Logistic.style.display = "list-item";
-      console.log("aa");
       Logistic.innerHTML = "Logistic feasibility: " + round(Logistic_Performance()[1], 2) + "% | " + Logistic_Performance()[2];
     } else if (sectionText === "Structural Performance (Optional)") {
       Performance.style.display = "list-item";
@@ -352,6 +349,10 @@ function Suggest() {
   document.getElementById("Performance").innerHTML =
     "3) Structural performance: " + round(Structural_Performance_Percentage, 2) + "% | " + Structural_Performance_Status;
  */
+
+  console.log(Structural_Visual_Inspection());
+  console.log(Logistic_Performance());
+  console.log(Structural_Performance());
 
   let Result = document.getElementById("Result");
   let Overall = document.getElementById("Overall");
