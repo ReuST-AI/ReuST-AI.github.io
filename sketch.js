@@ -416,7 +416,7 @@ function Suggest() {
   Result.style.display = "flex";
   Overall.innerHTML =
     "The overall reusability performance " +
-    ((Structural_Visual_Inspection()[1] + Structural_Performance()[1] + Logistic_Performance()[1]) / 3).toFixed(2) +
+    ((Structural_Visual_Inspection()[1] * 1 + Structural_Performance()[1] * 1 + Logistic_Performance()[1] * 1) / 3).toFixed(2) +
     "%";
   console.log(Result.innerHTML);
 }
