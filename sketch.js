@@ -9,8 +9,14 @@ let DAMAGE_CLASS_NAMES = ["Damaged", "Not Damaged"];
 let imageArray = [];
 
 let N_Corroded_Images;
+let N_NotCorroded_Images;
+
 let N_Bolted_Images;
+let N_Welded_Images;
+
 let N_Damaged_Images;
+let N_NotDamaged_Images;
+
 let N_Images;
 
 function preload() {
@@ -32,6 +38,7 @@ let loadingText = document.getElementById("loading-text");
 //// https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop ////////////////
 function dropHandler(ev) {
   const imageContainer = document.getElementById("image-container");
+  document.getElementById("submit-images").disabled = true;
   imageContainer.innerHTML = "";
   imageArray = [];
 
@@ -109,10 +116,10 @@ function calculateCarbon() {
     resultElement.innerHTML = ""; // Clear previous results
 
     // According to the cradle-to-cradle life cycle assessment
-    resultElement.innerHTML += "<p>Total weight of structural element: <b>" + totalWeight.toFixed(1) + " kg</b></p>";
-    resultElement.innerHTML += "<p>Product stage A1-A3: <b>" + (totalWeight * C_A1A3).toFixed(1) + " kgCO<sub>2</sub>e</b></p>";
-    resultElement.innerHTML += "<p>End of life stage C1-C4: <b> " + (totalWeight * C_C1C4).toFixed(1) + " kgCO<sub>2</sub>e</b></p>";
-    resultElement.innerHTML += "<p>Reuse, recycle and recovery stage D: <b>" + (totalWeight * C_D).toFixed(1) + " kgCO<sub>2</sub>e</b></p>";
+    resultElement.innerHTML += "<p>Total weight of structural element: <b>" + totalWeight.toFixed(1) + " [kg]</b></p>";
+    resultElement.innerHTML += "<p>Product stage A1-A3: <b>" + (totalWeight * C_A1A3).toFixed(1) + " [kgCO<sub>2</sub>e]</b></p>";
+    resultElement.innerHTML += "<p>End of life stage C1-C4: <b> " + (totalWeight * C_C1C4).toFixed(1) + " [kgCO<sub>2</sub>e]</b></p>";
+    resultElement.innerHTML += "<p>Reuse, recycle and recovery stage D: <b>" + (totalWeight * C_D).toFixed(1) + " [kgCO<sub>2</sub>e]</b></p>";
   } else {
     alert("Error: Total weight is zero. Please provide valid input values.");
   }
@@ -155,6 +162,7 @@ async function getImageData(element) {
   }
 }
 
+let N_TotalImages;
 async function classifyImages() {
   // Display the loader before starting the classification
   document.getElementById("loader").style.display = "inline";
@@ -162,8 +170,14 @@ async function classifyImages() {
   document.getElementById("submit-images").disabled = true;
 
   N_Corroded_Images = 0;
+  N_NotCorroded_Images = 0;
+
   N_Bolted_Images = 0;
+  N_Welded_Images = 0;
+
   N_Damaged_Images = 0;
+  N_NotDamaged_Images = 0;
+
   N_Images = 0;
 
   let promises = [];
@@ -180,6 +194,8 @@ async function classifyImages() {
 
         if (CORROSION_CLASS_NAMES[int(result > 0.5)] === "Corroded") {
           N_Corroded_Images += 1;
+        } else {
+          N_NotCorroded_Images += 1;
         }
         //console.log('CORROSION | This image most likely belongs to "' + CORROSION_CLASS_NAMES[int(result > 0.5)] + '" | ' + nf(result, 1, 2));
       },
@@ -199,6 +215,8 @@ async function classifyImages() {
 
         if (CONNECTION_CLASS_NAMES[int(result > 0.5)] === "Bolted") {
           N_Bolted_Images += 1;
+        } else {
+          N_Welded_Images += 1;
         }
         //console.log('CONNECTION |This image most likely belongs to "' + CONNECTION_CLASS_NAMES[int(result > 0.5)] + '" | ' + nf(result, 1, 2));
       },
@@ -218,6 +236,8 @@ async function classifyImages() {
 
         if (DAMAGE_CLASS_NAMES[int(result > 0.5)] === "Damaged") {
           N_Damaged_Images += 1;
+        } else {
+          N_NotDamaged_Images += 1;
         }
         //console.log('DAMAGE |This image most likely belongs to "' + DAMAGE_CLASS_NAMES[int(result > 0.5)] + '" | ' + nf(result, 1, 2));
       },
@@ -229,20 +249,31 @@ async function classifyImages() {
   }
   // Wait for all promises to resolve
   Promise.all(promises).then(function () {
+    N_TotalImages = N_Corroded_Images + N_NotCorroded_Images + N_Bolted_Images + N_Welded_Images + N_Damaged_Images + N_NotDamaged_Images;
+
+    console.log(N_Images, N_TotalImages);
+
     const sum = document.getElementById("Images_Summary");
     // Update the Images_Summary after all images are classified
     sum.style.display = "block";
     sum.innerText =
-      "Depending on the loaded images, " +
+      "Loaded images: " +
       round((N_Corroded_Images / N_Images) * 100, 1) +
-      "% is corroded, " +
+      "% corroded, " +
+      round((N_NotCorroded_Images / N_Images) * 100, 1) +
+      "% not corroded, " +
       round((N_Bolted_Images / N_Images) * 100, 1) +
-      "% is bolted, " +
+      "% bolted, " +
+      round((N_Welded_Images / N_Images) * 100, 1) +
+      "% welded, " +
       round((N_Damaged_Images / N_Images) * 100, 1) +
-      "% is damaged.";
+      "% damaged, " +
+      round((N_NotDamaged_Images / N_Images) * 100, 1) +
+      "% not damaged. ";
+
     // Hide the loader after classification is complete
     document.getElementById("loader").style.display = "none";
-    document.getElementById("submit-images").disabled = false;
+    document.getElementById("submit-images").disabled = true;
     Suggest();
   });
 }
@@ -257,41 +288,61 @@ function Suggest() {
   document.getElementById("Inspection").style.display = "none";
   document.getElementById("Performance").style.display = "none"; */
 
+  document.getElementById("Suggestion").style.display = "block";
+
   function Structural_Visual_Inspection() {
     let Structural_Visual_Inspection = 0;
+    let Structural_Visual_Inspection_Status;
     const optdata = document.getElementById("Optional_VisualData");
 
     let Structural_Visual_Inspection_Percentage = 0;
+
     if (noImageDataCheckbox.checked) {
-      Structural_Visual_Inspection += 3 * parseFloat(Connection_Type_Slider.value) + 4 * parseInt(Corroded.value) + 4 * parseInt(Damaged.value);
+      Structural_Visual_Inspection +=
+        2 * (parseFloat(Connection_Type_Slider.value) || 0) +
+        1 +
+        (2 * (parseInt(Corroded.value) || 0) + 1) +
+        (2 * (parseInt(Damaged.value) || 0) + 1);
     } else {
-      Structural_Visual_Inspection += 3 * (N_Bolted_Images / N_Images) + 4 * (N_Corroded_Images / N_Images) + 4 * (N_Damaged_Images / N_Images);
+      Structural_Visual_Inspection +=
+        1 * (N_Corroded_Images / N_Images) +
+        1 * (N_Damaged_Images / N_Images) +
+        1 * (N_Welded_Images / N_Images) +
+        3 * (N_Bolted_Images / N_Images) +
+        3 * (N_NotCorroded_Images / N_Images) +
+        3 * (N_NotDamaged_Images / N_Images);
     }
 
     if (optdata && optdata.checked) {
       Structural_Visual_Inspection +=
-        1 * parseInt(Composite_Connection.value) +
-        1 * parseInt(Fire_Protection.value) +
-        2 * parseInt(Sufficient_Amount.value) +
-        2 * parseInt(Geometry_Check.value);
-      Structural_Visual_Inspection_Percentage = (Structural_Visual_Inspection / 17) * 100;
+        1 * (parseInt(Composite_Connection.value) || 0) +
+        1 * (parseInt(Fire_Protection.value) || 0) +
+        2 * (parseInt(Sufficient_Amount.value) || 0) +
+        2 * (parseInt(Geometry_Check.value) || 0);
+      Structural_Visual_Inspection_Percentage = (Structural_Visual_Inspection / 15) * 100;
     } else {
-      Structural_Visual_Inspection_Percentage = (Structural_Visual_Inspection / 11) * 100;
+      Structural_Visual_Inspection_Percentage = (Structural_Visual_Inspection / 12) * 100;
     }
-
-    let Structural_Visual_Inspection_Status = Status(Structural_Visual_Inspection_Percentage, 70);
+    Structural_Visual_Inspection_Status = Status(Structural_Visual_Inspection_Percentage, 70);
 
     return [Structural_Visual_Inspection, Structural_Visual_Inspection_Percentage, Structural_Visual_Inspection_Status];
   }
 
   function Logistic_Performance() {
+    let Item_Weight_Value = parseInt(Item_Weight.value) || 0;
+    let Easy_Handle_Value = parseInt(Easy_Handle.value) || 0;
+    let Exist_Infrastructure_Value = parseInt(Exist_Infrastructure.value) || 0;
+    let Special_Protection_Value = parseInt(Special_Protection.value) || 0;
+    let Dismantle_Phase_Value = parseInt(Dismantle_Phase.value) || 0;
+    let Storage_Availability_Value = parseInt(Storage_Availability.value) || 0;
+
     let Logistic_Performance =
-      3 * (parseInt(Item_Weight.value) / 3) +
-      3 * parseInt(Easy_Handle.value) +
-      4 * parseInt(Exist_Infrastructure.value) +
-      1 * parseInt(Special_Protection.value) +
-      3 * parseInt(Dismantle_Phase.value) +
-      3 * parseInt(Storage_Availability.value);
+      3 * (Item_Weight_Value / 3) +
+      3 * Easy_Handle_Value +
+      4 * Exist_Infrastructure_Value +
+      1 * Special_Protection_Value +
+      3 * Dismantle_Phase_Value +
+      3 * Storage_Availability_Value;
 
     let Logistic_Performance_Percentage = (Logistic_Performance / 17) * 100;
     let Logistic_Performance_Status = Status(Logistic_Performance_Percentage, 75);
@@ -300,12 +351,14 @@ function Suggest() {
   }
 
   function Structural_Performance() {
+    let Data_Quality_Value = parseInt(Data_Quality.value) || 0;
+    let Construction_Period_Value = parseInt(Construction_Period.value) || 0;
+    let Maintenance_Value = parseInt(Maintenance.value) || 0;
+    let Purpose_Value = parseInt(Purpose.value) || 0;
+    let Testing_Value = parseInt(Testing.value) || 0;
+
     let Structural_Performance =
-      4 * (parseInt(Data_Quality.value) / 3) +
-      2 * parseInt(Construction_Period.value) +
-      3 * parseInt(Maintenance.value) +
-      3 * parseInt(Purpose.value) +
-      3 * parseInt(Testing.value);
+      4 * (Data_Quality_Value / 3) + 2 * Construction_Period_Value + 3 * Maintenance_Value + 3 * Purpose_Value + 3 * Testing_Value;
 
     let Structural_Performance_Percentage = (Structural_Performance / 15) * 100;
     let Structural_Performance_Status = Status(Structural_Performance_Percentage, 80);
@@ -329,7 +382,6 @@ function Suggest() {
   // Iterate through all active dropdowns and display corresponding percentage containers
   activeSections.forEach(function (activeSection) {
     const sectionText = activeSection.innerText;
-    console.log(sectionText);
     if (sectionText === "Logistic Feasibility (Optional)") {
       //&& (imageArray.length > 0 || noImageDataCheckbox.checked)
       Logistic.style.display = "list-item";
@@ -362,10 +414,9 @@ function Suggest() {
     Result.innerHTML = "Demolition - Recycle";
   }
   Result.style.display = "flex";
-  Overall.style.display = "flex";
   Overall.innerHTML =
-    "The overall reusability analysis shows " +
-    (((Structural_Visual_Inspection()[0] / 5 + Structural_Performance()[0] / 3 + Logistic_Performance()[0] / 3) * 100) / 3).toFixed(2) +
+    "The overall reusability performance " +
+    ((Structural_Visual_Inspection()[1] + Structural_Performance()[1] + Logistic_Performance()[1]) / 3).toFixed(2) +
     "%";
   console.log(Result.innerHTML);
 }
@@ -424,7 +475,7 @@ function toggleOptions(clickedCheckboxId) {
       fileInput.disabled = false;
       fileInput.style.display = "flex";*/
       imageContainer.style.display = "flex";
-      submitImages.style.display = "flex";
+      submitImages.style.display = "block";
     }
   }
 }
