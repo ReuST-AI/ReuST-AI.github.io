@@ -38,7 +38,6 @@ let loadingText = document.getElementById("loading-text");
 //// https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop ////////////////
 function dropHandler(ev) {
   const imageContainer = document.getElementById("image-container");
-  document.getElementById("submit-images").disabled = true;
   imageContainer.innerHTML = "";
   imageArray = [];
 
@@ -382,11 +381,11 @@ function Suggest() {
   // Iterate through all active dropdowns and display corresponding percentage containers
   activeSections.forEach(function (activeSection) {
     const sectionText = activeSection.innerText;
-    if (sectionText === "Logistic Feasibility (Optional)") {
+    if (sectionText === "Logistic Feasibility") {
       //&& (imageArray.length > 0 || noImageDataCheckbox.checked)
       Logistic.style.display = "list-item";
       Logistic.innerHTML = "Logistic feasibility: " + round(Logistic_Performance()[1], 2) + "% | " + Logistic_Performance()[2];
-    } else if (sectionText === "Structural Performance (Optional)") {
+    } else if (sectionText === "Structural Performance") {
       Performance.style.display = "list-item";
       Performance.innerHTML = "Structural performance: " + round(Structural_Performance()[1], 2) + "% | " + Structural_Performance()[2];
     }
@@ -410,8 +409,12 @@ function Suggest() {
   let Overall = document.getElementById("Overall");
   if (Structural_Visual_Inspection()[2] == "Passed" && Logistic_Performance()[2] == "Passed" && Structural_Performance()[2] == "Passed") {
     Result.innerHTML = " Dismantle - Reuse";
+    Result.style.backgroundColor = "green"; // Green for "Reuse"
+    Result.style.color = "white";
   } else {
     Result.innerHTML = "Demolition - Recycle";
+    Result.style.backgroundColor = "yellow"; // Yellow for "Recycle"
+    Result.style.color = "black";
   }
   Result.style.display = "flex";
   Overall.innerHTML =
