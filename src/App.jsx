@@ -12,24 +12,48 @@ const round = (value, decimals = 1) => {
 const Section = ({ id, title, description, isOpen, onToggle, children }) => (
   <section
     id={id}
-    className={`rounded-3xl border border-white/40 bg-white/75 p-6 shadow-soft transition-all duration-300 ${
-      isOpen ? 'ring-2 ring-brand/40' : 'hover:ring-1 hover:ring-brand/30'
+    className={`group relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-8 shadow-soft transition-all duration-500 ${
+      isOpen ? 'ring-2 ring-brand/30' : 'hover:-translate-y-1 hover:shadow-xl'
     }`}
   >
-    <button
-      type="button"
-      className="flex w-full items-start justify-between gap-4 text-left"
-      onClick={onToggle}
-    >
-      <div>
-        <h2 className="text-xl font-semibold text-brand-dark">{title}</h2>
-        {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
-      </div>
-      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white">
-        {isOpen ? '-' : '+'}
-      </span>
-    </button>
-    {isOpen ? <div className="mt-6 space-y-6">{children}</div> : null}
+    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent opacity-0 transition duration-500 group-hover:opacity-80" />
+    <div className="relative">
+      <button
+        type="button"
+        className="flex w-full flex-col gap-4 text-left md:flex-row md:items-start md:justify-between"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls={`${id}-content`}
+      >
+        <div className="max-w-3xl space-y-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">Assessment Module</span>
+          <h2 className="text-2xl font-display font-semibold text-brand-dark">{title}</h2>
+          {description ? <p className="text-sm text-slate-600">{description}</p> : null}
+        </div>
+        <span
+          className={`flex h-11 w-11 items-center justify-center rounded-full border border-brand/20 bg-brand/5 text-brand transition-all duration-300 ${
+            isOpen ? 'rotate-180 bg-brand text-white shadow-lg' : 'group-hover:border-brand/40'
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 transition-transform duration-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
+      </button>
+      {isOpen ? (
+        <div id={`${id}-content`} className="mt-8 space-y-8">
+          {children}
+        </div>
+      ) : null}
+    </div>
   </section>
 );
 
@@ -75,10 +99,10 @@ const ToggleCard = ({ active, title, description, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex w-full flex-col gap-1 rounded-2xl border px-4 py-3 text-left transition-all ${
+    className={`relative flex w-full flex-col gap-1 rounded-2xl border px-4 py-3 text-left transition-all ${
       active
-        ? 'border-brand bg-brand text-white shadow-soft'
-        : 'border-slate-200 bg-white text-slate-700 hover:border-brand/50 hover:bg-brand-light'
+        ? 'border-brand bg-gradient-to-br from-brand to-brand-dark text-white shadow-soft'
+        : 'border-white/60 bg-white/80 text-slate-700 hover:-translate-y-0.5 hover:shadow-md'
     }`}
   >
     <span className="text-sm font-semibold tracking-wide">{title}</span>
@@ -113,6 +137,33 @@ const SliderField = ({ id, label, min = 0, max = 1, step = 0.01, value, onChange
     </div>
   </div>
 );
+
+const statusStyles = (status) =>
+  status === 'Passed'
+    ? 'bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-200'
+    : 'bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200';
+
+const MetricCard = ({ label, value, status, caption, accent, icon, statusClassName }) => {
+  const statusClass = statusClassName ?? statusStyles(status);
+  return (
+    <article className="group relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-6 shadow-soft transition duration-500 hover:-translate-y-1 hover:shadow-xl">
+      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent} opacity-0 transition duration-500 group-hover:opacity-100`} />
+      <div className="relative flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">{label}</p>
+          <p className="mt-3 text-3xl font-display font-semibold text-brand-dark">{value}</p>
+        </div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand shadow-inner">
+          {icon}
+        </div>
+      </div>
+      <div className="relative mt-6 flex items-center justify-between gap-3">
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{status}</span>
+        <span className="text-right text-xs font-medium text-slate-500">{caption}</span>
+      </div>
+    </article>
+  );
+};
 
 const loadImageElement = (src) =>
   new Promise((resolve, reject) => {
@@ -431,6 +482,163 @@ function App() {
     )}% not damaged.`;
   }, [classification]);
 
+  const summaryCards = useMemo(() => {
+    const logisticComplete = Object.values(logisticInputs).some((value) => value !== '');
+    const performanceComplete = Object.values(performanceInputs).some((value) => value !== '');
+    const visualCaption = classification?.total
+      ? `AI-assisted · ${classification.total} image${classification.total > 1 ? 's' : ''}`
+      : noImageData
+      ? 'Manual scoring active'
+      : 'Provide inspection evidence';
+    const logisticCaption = logisticComplete ? 'Inputs captured' : 'Awaiting data';
+    const performanceCaption = performanceComplete ? 'Inputs captured' : 'Awaiting data';
+    const recommendationCaption =
+      suggestion.tone === 'success' ? 'Reuse pathway recommended' : 'Recycling recommended';
+    const recommendationAccent =
+      suggestion.tone === 'success'
+        ? 'from-emerald-300/40 via-emerald-200/40 to-transparent'
+        : 'from-amber-300/40 via-amber-200/40 to-transparent';
+
+    return [
+      {
+        id: 'visual',
+        label: 'Visual Inspection',
+        value: `${inspectionScore.percentage.toFixed(1)}%`,
+        status: inspectionScore.status,
+        caption: visualCaption,
+        accent: 'from-emerald-300/30 via-emerald-200/40 to-transparent',
+        icon: (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h4l1-2h8l1 2h4m-2 0a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2m7 3a4 4 0 110 8 4 4 0 010-8z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'logistic',
+        label: 'Logistic Feasibility',
+        value: `${logisticScore.percentage.toFixed(1)}%`,
+        status: logisticScore.status,
+        caption: logisticCaption,
+        accent: 'from-sky-300/30 via-sky-200/40 to-transparent',
+        icon: (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10-2v-4a1 1 0 00-1-1h-5V7h3l3 3h2a1 1 0 011 1v4m-4 2a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+        ),
+      },
+      {
+        id: 'performance',
+        label: 'Structural Performance',
+        value: `${performanceScore.percentage.toFixed(1)}%`,
+        status: performanceScore.status,
+        caption: performanceCaption,
+        accent: 'from-indigo-300/30 via-indigo-200/40 to-transparent',
+        icon: (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M15 11a3 3 0 11-6 0 3 3 0 016 0zm6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        ),
+      },
+      {
+        id: 'decision',
+        label: 'Decision Pathway',
+        value: `${suggestion.overall}%`,
+        status: suggestion.label,
+        caption: recommendationCaption,
+        accent: recommendationAccent,
+        statusClassName:
+          suggestion.tone === 'success'
+            ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-300'
+            : 'bg-amber-400/20 text-amber-700 ring-1 ring-inset ring-amber-300',
+        icon: (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.318 6.318a4.5 4.5 0 010 6.364L3 14l4 4 1.318-1.318a4.5 4.5 0 016.364 0L16 19l4-4-1.318-1.318a4.5 4.5 0 000-6.364L16 6l-1.318 1.318a4.5 4.5 0 01-6.364 0L7 6l-2.682.318z"
+            />
+          </svg>
+        ),
+      },
+    ];
+  }, [
+    classification,
+    inspectionScore,
+    logisticInputs,
+    logisticScore,
+    noImageData,
+    performanceInputs,
+    performanceScore,
+    suggestion,
+  ]);
+
+  const moduleSummaries = useMemo(
+    () => [
+      {
+        id: 'visual',
+        label: 'Visual inspection',
+        percentage: inspectionScore.percentage.toFixed(1),
+        status: inspectionScore.status,
+        description: 'Condition & connection integrity',
+      },
+      {
+        id: 'logistic',
+        label: 'Logistic feasibility',
+        percentage: logisticScore.percentage.toFixed(1),
+        status: logisticScore.status,
+        description: 'Dismantling & handling readiness',
+      },
+      {
+        id: 'performance',
+        label: 'Structural performance',
+        percentage: performanceScore.percentage.toFixed(1),
+        status: performanceScore.status,
+        description: 'Reliability & reuse potential',
+      },
+    ],
+    [inspectionScore, logisticScore, performanceScore]
+  );
+
   const calculateCarbon = useCallback(() => {
     let totalWeight = 0;
     if (lcaMode === 'weight') {
@@ -463,40 +671,117 @@ function App() {
     });
   }, [lcaInputs, lcaMode]);
 
-  const overallTone = suggestion.tone === 'success' ? 'bg-emerald-500 text-white' : 'bg-amber-200 text-amber-900';
+  const recommendationAccent =
+    suggestion.tone === 'success'
+      ? 'from-emerald-200/60 via-emerald-100/70 to-transparent'
+      : 'from-amber-200/60 via-amber-100/70 to-transparent';
+
+  const overallTone =
+    suggestion.tone === 'success'
+      ? 'from-emerald-500 via-emerald-600 to-emerald-700 text-white'
+      : 'from-amber-100 via-amber-200 to-amber-300 text-amber-900';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-dark via-brand to-brand-light pb-16">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-12 text-slate-900">
-        <header className="rounded-3xl border border-white/40 bg-white/80 p-8 shadow-soft backdrop-blur">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <img src="/assets/logo.png" alt="ReuST logo" className="h-16 w-auto" />
-                <h1 className="text-4xl font-bold tracking-tight text-brand-dark">ReuST</h1>
+    <div className="relative min-h-screen overflow-hidden pb-16">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-brand/40 blur-3xl animate-pulse-soft"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-48 left-[-10%] h-[26rem] w-[26rem] rounded-full bg-sky-400/30 blur-3xl animate-float"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute bottom-[-12rem] right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-emerald-400/25 blur-3xl animate-float"
+        aria-hidden="true"
+      />
+      <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-16 text-slate-900">
+        <header className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/80 p-10 shadow-soft backdrop-blur">
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-light/80 via-white/90 to-white/60 opacity-90"
+            aria-hidden="true"
+          />
+          <div className="relative flex flex-col gap-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-4">
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+                  <span className="h-2 w-2 rounded-full bg-brand-dark" />
+                  Beta workspace
+                </span>
+                <div className="flex flex-wrap items-center gap-6">
+                  <img src="/assets/logo.png" alt="ReuST logo" className="h-16 w-auto" />
+                  <div className="space-y-3">
+                    <h1 className="text-4xl font-display font-semibold tracking-tight text-brand-dark">ReuST Decision Studio</h1>
+                    <p className="max-w-2xl text-sm text-slate-600">
+                      Harmonise visual inspections, logistic constraints, structural performance, and carbon insights to guide reuse strategies for structural steel elements.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="mt-4 max-w-3xl text-base text-slate-700">
-                A decision making framework for efficient end-of-life scenarios of structural steel elements. Evaluate visual
-                inspection data, logistic feasibility, structural performance, and life cycle impacts in one cohesive workspace.
-              </p>
+              <div className="rounded-3xl border border-brand/20 bg-white/90 p-5 text-sm text-slate-600 shadow-inner backdrop-blur">
+                <p className="font-semibold text-brand-dark">Need support?</p>
+                <a href="mailto:alper.kanyilmaz@polimi.it" className="mt-2 inline-flex items-center gap-2 font-medium text-brand hover:underline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                  </svg>
+                  alper.kanyilmaz@polimi.it
+                </a>
+                <p className="mt-4 text-xs text-slate-500">
+                  Prototype for evaluation purposes only. Validate results with your engineering team before implementation.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col items-start gap-2 text-sm text-slate-600">
-              <span className="font-semibold uppercase tracking-wider text-brand-dark">Contact</span>
-              <a href="mailto:alper.kanyilmaz@polimi.it" className="font-medium text-brand hover:underline">
-                alper.kanyilmaz@polimi.it
+            {loadingModels ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-700 shadow-sm">
+                <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-amber-500" aria-hidden="true" />
+                Loading machine learning models. This may take a few seconds…
+              </div>
+            ) : null}
+            {modelError ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 shadow-sm">{modelError}</div>
+            ) : null}
+            <nav className="flex flex-wrap gap-3 text-xs font-semibold text-brand">
+              <a
+                href="#visual-inspection"
+                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
+              >
+                Visual inspection
               </a>
-            </div>
+              <a
+                href="#logistic-feasibility"
+                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
+              >
+                Logistics
+              </a>
+              <a
+                href="#structural-performance"
+                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
+              >
+                Performance
+              </a>
+              <a
+                href="#life-cycle"
+                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
+              >
+                Life cycle
+              </a>
+            </nav>
           </div>
-          {loadingModels ? (
-            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-              <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" aria-hidden="true" />
-              Loading machine learning models. This may take a few seconds…
-            </div>
-          ) : null}
-          {modelError ? (
-            <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{modelError}</div>
-          ) : null}
         </header>
+
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card) => (
+            <MetricCard key={card.id} {...card} />
+          ))}
+        </section>
 
         <Section
           id="visual-inspection"
@@ -625,7 +910,7 @@ function App() {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-5 shadow-inner">
                 <h3 className="text-lg font-semibold text-brand-dark">
                   {noImageData ? 'Provide inspection scores' : 'Manual adjustments'}
                 </h3>
@@ -664,7 +949,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-5 shadow-inner">
                 <label className="flex items-center gap-3 text-sm font-semibold text-slate-700">
                   <input
                     type="checkbox"
@@ -1025,20 +1310,56 @@ function App() {
           </div>
         </Section>
 
-        <section className="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-soft">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-semibold text-brand-dark">Suggestion for the End-of-Life Scenario</h2>
-            {classifySummary ? <p className="text-sm text-slate-600">{classifySummary}</p> : null}
-            <ul className="list-disc space-y-2 pl-5 text-sm text-slate-700">
-              <li>Structural visual inspection: {inspectionScore.percentage.toFixed(2)}% | {inspectionScore.status}</li>
-              <li>Logistic feasibility: {logisticScore.percentage.toFixed(2)}% | {logisticScore.status}</li>
-              <li>Structural performance: {performanceScore.percentage.toFixed(2)}% | {performanceScore.status}</li>
-            </ul>
-            <div className={`mt-4 flex items-center justify-between rounded-2xl px-6 py-4 text-base font-semibold ${overallTone}`}>
-              <span>Based on the input evaluation, the efficient end-of-life scenario is:</span>
-              <span>{suggestion.label}</span>
+        <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-8 shadow-soft">
+          <div
+            className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${recommendationAccent} opacity-90`}
+            aria-hidden="true"
+          />
+          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr]">
+            <div className="space-y-5">
+              <h2 className="text-3xl font-display font-semibold text-brand-dark">End-of-life recommendation</h2>
+              <p className="text-sm text-slate-600">
+                Synthesising inspection, logistics, and performance scores to highlight the most resource-efficient pathway.
+              </p>
+              {classifySummary ? (
+                <div className="rounded-2xl border border-brand/20 bg-white/70 p-4 text-sm text-slate-600 shadow-sm">{classifySummary}</div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-brand/20 bg-white/60 p-4 text-sm text-slate-500">
+                  Upload imagery or share manual assessments to unlock richer AI-driven insights.
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-3">
+                {moduleSummaries.map((module) => (
+                  <div
+                    key={module.id}
+                    className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">{module.label}</p>
+                    <p className="mt-3 text-2xl font-display text-brand-dark">{module.percentage}%</p>
+                    <span className={`mt-4 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(module.status)}`}>
+                      {module.status}
+                    </span>
+                    <p className="mt-3 text-xs text-slate-500">{module.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-center text-sm font-semibold text-brand-dark">The overall reusability performance {suggestion.overall}%</p>
+            <div className={`flex h-full flex-col justify-between gap-6 rounded-3xl bg-gradient-to-br ${overallTone} p-8 shadow-xl`}>
+              <div className="space-y-4">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+                  Scenario
+                </span>
+                <p className="text-3xl font-display font-semibold">{suggestion.label}</p>
+                <p className="text-sm opacity-90">
+                  The blended score across all modules is <strong>{suggestion.overall}%</strong>. Continue iterating inputs to see how the recommendation evolves.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/20 p-4 text-sm backdrop-blur">
+                <p>
+                  Document assumptions and share this dashboard with your stakeholders to support circular construction decisions and transparent communication.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
