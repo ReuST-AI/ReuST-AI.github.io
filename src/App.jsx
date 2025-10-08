@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as tf from '@tensorflow/tfjs';
 
 const statusLabel = (performance, threshold) => (performance >= threshold ? 'Passed' : 'Not passed');
@@ -23,8 +23,8 @@ const Section = ({
   const collapsible = typeof onToggle === 'function';
   const containerClasses =
     variant === 'compact'
-      ? 'rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5 backdrop-blur'
-      : 'rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-slate-900/10 backdrop-blur';
+      ? 'rounded-2xl border border-white/40 bg-white/65 p-6 shadow-lg shadow-slate-900/5 backdrop-blur-xl'
+      : 'rounded-3xl border border-white/50 bg-white/70 p-8 shadow-xl shadow-slate-900/10 backdrop-blur-2xl';
 
   return (
     <section id={id} className={`relative overflow-hidden transition-all ${containerClasses} ${className}`}>
@@ -75,13 +75,13 @@ const Section = ({
 };
 
 const SelectField = ({ id, label, options, value, onChange, required }) => (
-  <label className="flex flex-col gap-2 text-sm font-medium text-slate-700" htmlFor={id}>
+  <label className="flex flex-col gap-2 text-sm font-medium text-slate-600" htmlFor={id}>
     {label}
     <select
       id={id}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+      className="w-full rounded-xl border border-white/50 bg-white/60 px-4 py-2 text-sm font-medium text-slate-800 shadow-inner shadow-white/20 backdrop-blur focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
       required={required}
     >
       <option value="" disabled>
@@ -97,7 +97,7 @@ const SelectField = ({ id, label, options, value, onChange, required }) => (
 );
 
 const NumberField = ({ id, label, value, onChange, placeholder, min, step }) => (
-  <label className="flex flex-col gap-2 text-sm font-medium text-slate-700" htmlFor={id}>
+  <label className="flex flex-col gap-2 text-sm font-medium text-slate-600" htmlFor={id}>
     {label}
     <input
       id={id}
@@ -107,7 +107,7 @@ const NumberField = ({ id, label, value, onChange, placeholder, min, step }) => 
       placeholder={placeholder}
       min={min}
       step={step ?? 'any'}
-      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+      className="w-full rounded-xl border border-white/50 bg-white/60 px-4 py-2 text-sm font-medium text-slate-800 shadow-inner shadow-white/20 backdrop-blur focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
     />
   </label>
 );
@@ -167,19 +167,6 @@ const StatusBadge = ({ status }) => (
   </span>
 );
 
-const HighlightCard = ({ title, percentage, status, caption }) => (
-  <article className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-lg shadow-slate-900/5">
-    <div className="flex items-start justify-between">
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{title}</p>
-        <p className="text-3xl font-display font-semibold text-slate-900">{percentage}%</p>
-      </div>
-      <StatusBadge status={status} />
-    </div>
-    <p className="mt-3 text-xs font-medium text-slate-500">{caption}</p>
-  </article>
-);
-
 const StepItem = ({ title, status, description }) => {
   const stepStyles = {
     done: {
@@ -225,47 +212,88 @@ const StepItem = ({ title, status, description }) => {
   );
 };
 
-const RecommendationCard = ({ suggestion, totalImages }) => {
-  const gradient =
-    suggestion.tone === 'success'
-      ? 'from-emerald-500 via-emerald-600 to-emerald-700'
-      : 'from-amber-500 via-amber-600 to-amber-700';
+const RecommendationCard = ({ suggestion, totalImages, inspectionScore, logisticScore, performanceScore }) => {
+  const overallValue = Number.parseFloat(suggestion.overall);
+  const metrics = [
+    {
+      id: 'inspection',
+      label: 'Inspection score',
+      value: inspectionScore.percentage,
+      status: inspectionScore.status,
+    },
+    {
+      id: 'logistic',
+      label: 'Logistic feasibility',
+      value: logisticScore.percentage,
+      status: logisticScore.status,
+    },
+    {
+      id: 'performance',
+      label: 'Structural performance',
+      value: performanceScore.percentage,
+      status: performanceScore.status,
+    },
+  ];
 
   return (
-    <article className={`relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-br ${gradient} p-6 text-white shadow-xl shadow-slate-900/10`}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_55%)] opacity-80" aria-hidden="true" />
-      <div className="relative space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">End-of-life recommendation</span>
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            {suggestion.label}
-          </span>
-        </div>
-        <p className="text-2xl font-display font-semibold">{suggestion.tone === 'success' ? 'Reuse the asset' : 'Recycle with recovery plan'}</p>
-        <p className="text-sm text-white/80">
-          Aggregated insight from the visual inspection, logistics, and structural performance modules.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Overall readiness</p>
-            <p className="mt-2 text-3xl font-display font-semibold">{suggestion.overall}%</p>
+    <article className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl border border-white/40 bg-white/55 p-8 shadow-xl shadow-slate-900/10 backdrop-blur-2xl">
+      <div
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${
+          suggestion.tone === 'success'
+            ? 'from-emerald-500/20 via-emerald-400/10 to-emerald-500/5'
+            : 'from-amber-500/20 via-amber-400/10 to-amber-500/5'
+        } opacity-80`}
+        aria-hidden="true"
+      />
+      <div className="relative flex flex-col gap-8">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">End-of-life readiness</span>
+              <h3 className="text-2xl font-display font-semibold text-slate-900">{suggestion.label}</h3>
+            </div>
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                suggestion.tone === 'success'
+                  ? 'bg-emerald-500/10 text-emerald-700'
+                  : 'bg-amber-500/10 text-amber-700'
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {suggestion.tone === 'success' ? 'High readiness' : 'Needs caution'}
+            </span>
           </div>
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Recommended action</p>
-            <p className="mt-2 text-sm font-medium text-white">
-              {suggestion.tone === 'success'
-                ? 'Proceed with dismantling for reuse and plan selective refurbishment.'
-                : 'Prepare for deconstruction and recycling to maximise material recovery.'}
-            </p>
-          </div>
+          <p className="text-sm text-slate-600">
+            Composite readiness based on structural inspection, logistics, and performance intelligence.
+          </p>
         </div>
-        {totalImages ? (
-          <p className="text-xs font-medium text-white/70">{totalImages} classified image{totalImages === 1 ? '' : 's'} informed this recommendation.</p>
-        ) : (
-          <p className="text-xs font-medium text-white/70">Manual scoring currently informs this recommendation.</p>
-        )}
+        <div className="relative rounded-3xl border border-white/40 bg-white/60 p-6 shadow-inner shadow-white/20 backdrop-blur-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">Overall readiness</p>
+          <div className="mt-3 flex items-end gap-3">
+            <p className="text-5xl font-display font-semibold text-slate-900">{overallValue.toFixed(1)}%</p>
+            <p className="text-xs font-medium uppercase tracking-[0.28em] text-slate-400">Composite score</p>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Weighted perspective of all active assessment modules.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {metrics.map((metric) => (
+            <div key={metric.id} className="rounded-2xl border border-white/40 bg-white/65 p-4 shadow-sm shadow-white/30 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">{metric.label}</p>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-2xl font-display font-semibold text-slate-900">{metric.value.toFixed(1)}%</p>
+                <StatusBadge status={metric.status} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+      <p className="relative text-xs font-medium text-slate-500">
+        {totalImages
+          ? `${totalImages} classified image${totalImages === 1 ? '' : 's'} enriched this insight.`
+          : 'Manual scoring currently informs this insight.'}
+      </p>
     </article>
   );
 };
@@ -349,8 +377,11 @@ function App() {
     cD: '-0.413',
   });
   const [lcaResult, setLcaResult] = useState(null);
+  const disclaimerShownRef = useRef(false);
 
   useEffect(() => {
+    if (disclaimerShownRef.current) return;
+    disclaimerShownRef.current = true;
     const storageKey = 'reust-disclaimer-shown';
     if (typeof window === 'undefined') return;
     const hasSeenDisclaimer = sessionStorage.getItem(storageKey);
@@ -594,15 +625,6 @@ function App() {
     )}% not damaged.`;
   }, [classification]);
 
-  const logisticComplete = useMemo(() => Object.values(logisticInputs).some((value) => value !== ''), [logisticInputs]);
-  const performanceComplete = useMemo(
-    () => Object.values(performanceInputs).some((value) => value !== ''),
-    [performanceInputs]
-  );
-
-  const logisticCaption = logisticComplete ? 'Inputs captured' : 'Awaiting data';
-  const performanceCaption = performanceComplete ? 'Inputs captured' : 'Awaiting data';
-
   const classificationBreakdown = useMemo(() => {
     if (!classification || !classification.total) {
       return null;
@@ -688,29 +710,12 @@ function App() {
     return steps;
   }, [classification, hasEvidence, isClassifying, noImageData, previews.length, suggestion.label, suggestion.overall]);
 
-  const highlightCards = [
-    {
-      id: 'logistic',
-      title: 'Logistic feasibility',
-      percentage: logisticScore.percentage.toFixed(1),
-      status: logisticScore.status,
-      caption: logisticCaption,
-    },
-    {
-      id: 'performance',
-      title: 'Structural performance',
-      percentage: performanceScore.percentage.toFixed(1),
-      status: performanceScore.status,
-      caption: performanceCaption,
-    },
-  ];
-
-  const tabClass = (tab) =>
-    `rounded-full px-4 py-2 text-sm font-semibold transition ${
-      activeTab === tab
-        ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
-        : 'text-slate-500 hover:text-slate-900'
-    }`;
+  const tabSliderStyle = useMemo(
+    () => ({
+      transform: activeTab === 'assessment' ? 'translateX(0%)' : 'translateX(100%)',
+    }),
+    [activeTab]
+  );
 
   const calculateCarbon = useCallback(() => {
     let totalWeight = 0;
@@ -745,36 +750,58 @@ function App() {
   }, [lcaInputs, lcaMode]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-100">
+    <div className="relative min-h-screen overflow-hidden">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,70,229,0.08),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(24,65,99,0.16),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.16),transparent_55%)]"
         aria-hidden="true"
       />
-      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 pb-24 pt-10 text-slate-900">
-        <header className="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-slate-900/10 backdrop-blur">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 self-start rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-fixed bg-center opacity-10"
+        aria-hidden="true"
+      />
+      <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-12 px-6 pb-24 pt-12 text-slate-900">
+        <header className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/60 p-10 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl">
+          <div className="absolute -left-24 -top-32 h-64 w-64 rounded-full bg-brand/30 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-24 right-[-6rem] h-72 w-72 rounded-full bg-emerald-400/25 blur-3xl" aria-hidden="true" />
+          <div className="relative flex flex-col gap-8">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl space-y-4">
+                <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">
                   Beta workspace
                 </span>
-                <h1 className="text-4xl font-display font-semibold text-slate-900">ReuST decision studio</h1>
-                <p className="max-w-2xl text-sm text-slate-600">
-                  Prioritise reuse decisions with a professional dashboard that unifies visual inspections, logistics, and structural performance intelligence.
+                <h1 className="text-5xl font-display font-semibold tracking-tight text-slate-900">ReuST</h1>
+                <p className="text-base text-slate-600">
+                  A decision making framework for efficient end-of-life scenarios of structural steel elements.
                 </p>
               </div>
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-end">
-                <div className="flex items-center gap-2 rounded-full bg-slate-100 p-1">
-                  <button type="button" className={tabClass('assessment')} onClick={() => setActiveTab('assessment')}>
+              <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-end lg:max-w-sm">
+                <div className="relative flex w-full max-w-xs items-center rounded-full bg-white/70 p-1.5 shadow-inner shadow-white/40 backdrop-blur">
+                  <span
+                    className="absolute inset-y-1 left-1 w-[calc(50%-0.75rem)] rounded-full bg-slate-900 transition-transform duration-300 ease-out"
+                    style={tabSliderStyle}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('assessment')}
+                    className={`relative z-[1] flex-1 rounded-full px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.35em] transition-colors ${
+                      activeTab === 'assessment' ? 'text-white' : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
                     Assessment workspace
                   </button>
-                  <button type="button" className={tabClass('life-cycle')} onClick={() => setActiveTab('life-cycle')}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('life-cycle')}
+                    className={`relative z-[1] flex-1 rounded-full px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.35em] transition-colors ${
+                      activeTab === 'life-cycle' ? 'text-white' : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
                     Life cycle (LCA)
                   </button>
                 </div>
                 <a
                   href="mailto:alper.kanyilmaz@polimi.it"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                  className="inline-flex items-center gap-2 self-start rounded-full bg-gradient-to-r from-brand to-brand-dark px-5 py-2 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(24,65,99,0.22)] transition hover:shadow-soft"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -787,45 +814,112 @@ function App() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
                   </svg>
-                  Need support?
+                  Need support
                 </a>
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-xs text-slate-500">
+            <div className="rounded-2xl border border-white/50 bg-white/40 p-4 text-xs font-medium text-slate-500 shadow-inner shadow-white/30">
               Prototype for evaluation purposes only. Validate the outputs with your engineering team before implementation.
             </div>
             {loadingModels ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-700 shadow-sm">
+              <div className="flex items-center gap-3 rounded-2xl border border-amber-300/70 bg-amber-100/70 px-4 py-3 text-sm text-amber-800 shadow-sm">
                 <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-amber-500" aria-hidden="true" />
                 Loading machine learning models. This may take a few seconds…
               </div>
             ) : null}
             {modelError ? (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 shadow-sm">{modelError}</div>
+              <div className="rounded-2xl border border-rose-300/70 bg-rose-100/70 px-4 py-3 text-sm text-rose-700 shadow-sm">{modelError}</div>
             ) : null}
           </div>
         </header>
 
         {activeTab === 'assessment' ? (
           <>
-            <Section
-              id="visual-inspection"
-              title="Structural visual inspection"
-              description="Upload evidence or switch to manual scoring to derive a reliable structural condition score."
-              isOpen={visualOpen}
-              onToggle={() => setVisualOpen((value) => !value)}
-              meta={
-                <div className="text-right">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inspection score</p>
-                  <p className="mt-1 text-2xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
-                  <StatusBadge status={inspectionScore.status} />
-                </div>
-              }
-            >
-              <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
-                    <label className="flex items-start gap-3">
+            <div className="grid gap-8 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+              <Section
+                id="visual-inspection"
+                title="Structural visual inspection"
+                description="Hero workspace for imagery-led assessment with manual override controls."
+                isOpen={visualOpen}
+                onToggle={() => setVisualOpen((value) => !value)}
+                meta={
+                  <div className="text-right">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Inspection score</p>
+                    <p className="mt-2 text-3xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
+                    <StatusBadge status={inspectionScore.status} />
+                  </div>
+                }
+              >
+                <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+                  <div className="space-y-6">
+                    {!noImageData ? (
+                      <div
+                        onDragEnter={(event) => {
+                          event.preventDefault();
+                          setIsDragging(true);
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setIsDragging(true);
+                        }}
+                        onDragLeave={(event) => {
+                          event.preventDefault();
+                          setIsDragging(false);
+                        }}
+                        onDrop={handleDrop}
+                        className={`group relative flex min-h-[280px] cursor-pointer flex-col justify-between gap-6 overflow-hidden rounded-3xl border-2 border-dashed p-8 transition-all duration-300 ${
+                          isDragging
+                            ? 'border-brand bg-brand-light/70 shadow-[0_35px_60px_rgba(24,65,99,0.25)]'
+                            : 'border-white/60 bg-white/70 shadow-[0_35px_60px_rgba(15,23,42,0.14)]'
+                        }`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => document.getElementById('image-input')?.click()}
+                      >
+                        <div className="flex items-start justify-between gap-6">
+                          <div className="space-y-3">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-brand-light/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-brand">
+                              Visual evidence
+                            </span>
+                            <h3 className="text-2xl font-display font-semibold text-slate-900">Upload structural imagery</h3>
+                            <p className="max-w-md text-sm text-slate-600">
+                              Drop recent site captures or browse your device to initialise automated classification.
+                            </p>
+                          </div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-14 w-14 text-brand/60 transition-transform duration-300 group-hover:-translate-y-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m00L8 7m4-4v12" />
+                          </svg>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-brand">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(24,65,99,0.25)] transition hover:bg-brand-dark"
+                            onClick={() => document.getElementById('image-input')?.click()}
+                          >
+                            Browse files
+                          </button>
+                          <span className="text-xs font-medium uppercase tracking-[0.28em] text-brand/70">or drag & drop</span>
+                        </div>
+                        <input
+                          id="image-input"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(event) => handleFiles(event.target.files)}
+                          className="hidden"
+                        />
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-start gap-3 rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm shadow-white/40 backdrop-blur">
                       <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
@@ -840,253 +934,234 @@ function App() {
                         }}
                         disabled={previews.length > 0}
                       />
-                      <div className="space-y-1">
+                      <div>
                         <p className="text-sm font-semibold text-slate-800">Work without imagery</p>
-                        <p className="text-xs text-slate-500">Switch to manual scoring when site photos are unavailable.</p>
+                        <p className="text-xs text-slate-500">Toggle to rely on manual scoring when photos are unavailable.</p>
                       </div>
-                    </label>
-                  </div>
+                    </div>
 
-                  {!noImageData ? (
-                    <div
-                      onDragEnter={(event) => {
-                        event.preventDefault();
-                        setIsDragging(true);
-                      }}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setIsDragging(true);
-                      }}
-                      onDragLeave={(event) => {
-                        event.preventDefault();
-                        setIsDragging(false);
-                      }}
-                      onDrop={handleDrop}
-                      className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
-                        isDragging ? 'border-slate-500 bg-slate-100' : 'border-slate-300 bg-white'
-                      }`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => document.getElementById('image-input')?.click()}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12" />
-                      </svg>
-                      <div className="text-sm text-slate-600">
-                        <span className="font-semibold text-slate-800">Upload structural imagery</span> or drag & drop files here.
+                    {previews.length ? (
+                      <div className="rounded-3xl border border-white/50 bg-white/60 p-4 shadow-inner shadow-white/30 backdrop-blur">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Loaded imagery</p>
+                        <div className="mt-3 grid max-h-44 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+                          {previews.map((src, index) => (
+                            <img
+                              key={index}
+                              src={src}
+                              alt={`Uploaded preview ${index + 1}`}
+                              className="aspect-square w-full rounded-xl object-cover"
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <input
-                        id="image-input"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(event) => handleFiles(event.target.files)}
-                        className="hidden"
-                      />
-                    </div>
-                  ) : null}
-
-                  {previews.length ? (
-                    <div className="grid max-h-60 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
-                      {previews.map((src, index) => (
-                        <img key={index} src={src} alt={`Uploaded preview ${index + 1}`} className="h-20 w-full rounded-xl object-cover" />
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    {!noImageData ? (
-                      <button
-                        type="button"
-                        onClick={classifyImages}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-700"
-                        disabled={isClassifying}
-                      >
-                        {isClassifying ? (
-                          <svg
-                            className="h-4 w-4 animate-spin"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                          </svg>
-                        ) : null}
-                        {isClassifying ? 'Running classification…' : 'Run AI classification'}
-                      </button>
                     ) : null}
-                    {(previews.length || noImageData) && (
-                      <button
-                        type="button"
-                        onClick={resetImages}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                      >
-                        Reset evidence
-                      </button>
-                    )}
-                    {classification ? (
-                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        {classification.total} image{classification.total === 1 ? '' : 's'} analysed
-                      </span>
-                    ) : null}
-                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      {noImageData ? 'Manual inspection scoring' : 'Refine inspection inputs'}
-                    </h3>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {noImageData
-                        ? 'Enter qualitative observations to estimate the inspection score.'
-                        : 'Fine-tune the automated output with on-site knowledge.'}
-                    </p>
-                    <div className="mt-4 space-y-4">
-                      <SliderField
-                        id="connection-type"
-                        label="Connection type [fully welded - fully bolted]?"
-                        value={connectionSlider}
-                        onChange={setConnectionSlider}
-                      />
-                      <SelectField
-                        id="corroded"
-                        label="Is the element corroded?"
-                        value={visualInputs.corroded}
-                        onChange={(value) => setVisualInputs((state) => ({ ...state, corroded: value }))}
-                        options={[
-                          { value: '0', label: 'Yes' },
-                          { value: '1', label: 'No' },
-                        ]}
-                      />
-                      <SelectField
-                        id="damaged"
-                        label="Is the element damaged or distorted?"
-                        value={visualInputs.damaged}
-                        onChange={(value) => setVisualInputs((state) => ({ ...state, damaged: value }))}
-                        options={[
-                          { value: '0', label: 'Yes' },
-                          { value: '1', label: 'No' },
-                        ]}
-                      />
+                    <div className="flex flex-wrap items-center gap-3">
+                      {!noImageData ? (
+                        <button
+                          type="button"
+                          onClick={classifyImages}
+                          className="inline-flex items-center gap-3 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-slate-800 disabled:opacity-70"
+                          disabled={isClassifying}
+                        >
+                          {isClassifying ? (
+                            <svg
+                              className="h-4 w-4 animate-spin"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              aria-hidden="true"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                          )}
+                          {isClassifying ? 'Running classification…' : 'Run AI classification'}
+                        </button>
+                      ) : null}
+                      {(previews.length || noImageData) && (
+                        <button
+                          type="button"
+                          onClick={resetImages}
+                          className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-white/70 hover:text-slate-900"
+                        >
+                          Reset evidence
+                        </button>
+                      )}
+                      {classification ? (
+                        <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                          {classification.total} image{classification.total === 1 ? '' : 's'} analysed
+                        </span>
+                      ) : null}
                     </div>
-                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <h3 className="text-base font-semibold text-slate-900">Extended building context</h3>
-                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
-                          checked={optionalVisualData}
-                          onChange={(event) => setOptionalVisualData(event.target.checked)}
+                    <div className="rounded-3xl border border-white/50 bg-white/65 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                      <h3 className="text-base font-semibold text-slate-900">
+                        {noImageData ? 'Manual inspection scoring' : 'Refine inspection inputs'}
+                      </h3>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {noImageData
+                          ? 'Enter qualitative observations to estimate the inspection score.'
+                          : 'Fine-tune the automated output with on-site knowledge.'}
+                      </p>
+                      <div className="mt-4 space-y-4">
+                        <SliderField
+                          id="connection-type"
+                          label="Connection type [fully welded - fully bolted]?"
+                          value={connectionSlider}
+                          onChange={setConnectionSlider}
                         />
-                        Provide additional information
-                      </label>
-                    </div>
-                    {optionalVisualData ? (
-                      <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <SelectField
-                          id="composite-connection"
-                          label="Are there steel-concrete composite connections?"
-                          value={visualInputs.compositeConnection}
-                          onChange={(value) => setVisualInputs((state) => ({ ...state, compositeConnection: value }))}
+                          id="corroded"
+                          label="Is the element corroded?"
+                          value={visualInputs.corroded}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, corroded: value }))}
                           options={[
                             { value: '0', label: 'Yes' },
                             { value: '1', label: 'No' },
                           ]}
                         />
                         <SelectField
-                          id="fire-protection"
-                          label="Is there fire protection on the element?"
-                          value={visualInputs.fireProtection}
-                          onChange={(value) => setVisualInputs((state) => ({ ...state, fireProtection: value }))}
+                          id="damaged"
+                          label="Is the element damaged or distorted?"
+                          value={visualInputs.damaged}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, damaged: value }))}
                           options={[
-                            { value: '1', label: 'Yes' },
-                            { value: '0', label: 'No' },
-                          ]}
-                        />
-                        <SelectField
-                          id="sufficient-amount"
-                          label="Availability of sufficient reusable elements?"
-                          value={visualInputs.sufficientAmount}
-                          onChange={(value) => setVisualInputs((state) => ({ ...state, sufficientAmount: value }))}
-                          options={[
-                            { value: '1', label: 'Yes' },
-                            { value: '0', label: 'No' },
-                          ]}
-                        />
-                        <SelectField
-                          id="geometry-check"
-                          label="Passes geometric checks without modification?"
-                          value={visualInputs.geometryCheck}
-                          onChange={(value) => setVisualInputs((state) => ({ ...state, geometryCheck: value }))}
-                          options={[
-                            { value: '1', label: 'Yes' },
-                            { value: '0', label: 'No' },
+                            { value: '0', label: 'Yes' },
+                            { value: '1', label: 'No' },
                           ]}
                         />
                       </div>
-                    ) : (
-                      <p className="mt-3 text-xs text-slate-500">Enable the toggle to capture detailed project context.</p>
-                    )}
-                  </div>
-                </div>
+                    </div>
 
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-lg shadow-slate-900/5">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Composite score</p>
-                        <p className="text-3xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
-                        <p className="text-xs text-slate-500">
-                          {classification?.total
-                            ? `AI-assisted evaluation across ${classification.total} uploaded image${classification.total === 1 ? '' : 's'}.`
-                            : noImageData
-                            ? 'Manual scoring active. Update dropdowns to refine the score.'
-                            : 'Upload and classify imagery to activate AI scoring.'}
-                        </p>
+                    <div className="rounded-3xl border border-white/50 bg-white/60 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="text-base font-semibold text-slate-900">Extended building context</h3>
+                        <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
+                            checked={optionalVisualData}
+                            onChange={(event) => setOptionalVisualData(event.target.checked)}
+                          />
+                          Provide additional information
+                        </label>
                       </div>
-                      <StatusBadge status={inspectionScore.status} />
+                      {optionalVisualData ? (
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                          <SelectField
+                            id="composite-connection"
+                            label="Are there steel-concrete composite connections?"
+                            value={visualInputs.compositeConnection}
+                            onChange={(value) => setVisualInputs((state) => ({ ...state, compositeConnection: value }))}
+                            options={[
+                              { value: '0', label: 'Yes' },
+                              { value: '1', label: 'No' },
+                            ]}
+                          />
+                          <SelectField
+                            id="fire-protection"
+                            label="Is there fire protection on the element?"
+                            value={visualInputs.fireProtection}
+                            onChange={(value) => setVisualInputs((state) => ({ ...state, fireProtection: value }))}
+                            options={[
+                              { value: '1', label: 'Yes' },
+                              { value: '0', label: 'No' },
+                            ]}
+                          />
+                          <SelectField
+                            id="sufficient-amount"
+                            label="Availability of sufficient reusable elements?"
+                            value={visualInputs.sufficientAmount}
+                            onChange={(value) => setVisualInputs((state) => ({ ...state, sufficientAmount: value }))}
+                            options={[
+                              { value: '1', label: 'Yes' },
+                              { value: '0', label: 'No' },
+                            ]}
+                          />
+                          <SelectField
+                            id="geometry-check"
+                            label="Passes geometric checks without modification?"
+                            value={visualInputs.geometryCheck}
+                            onChange={(value) => setVisualInputs((state) => ({ ...state, geometryCheck: value }))}
+                            options={[
+                              { value: '1', label: 'Yes' },
+                              { value: '0', label: 'No' },
+                            ]}
+                          />
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-slate-500">Enable the toggle to capture detailed project context.</p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {highlightCards.map((card) => (
-                      <HighlightCard key={card.id} {...card} />
-                    ))}
-                  </div>
-
-                  <RecommendationCard suggestion={suggestion} totalImages={classification?.total ?? 0} />
-
-                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                    <p className="text-sm font-semibold text-slate-900">Progress tracker</p>
-                    <div className="mt-4 space-y-3">
-                      {visualSteps.map((step) => (
-                        <StepItem key={step.id} {...step} />
-                      ))}
-                    </div>
-                  </div>
-
-                  {classificationBreakdown ? (
-                    <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                      <p className="text-sm font-semibold text-slate-900">Classification breakdown</p>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {classificationBreakdown.map((item) => (
-                          <div key={item.id} className={`rounded-xl border px-4 py-3 ${item.tone}`}>
-                            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">{item.label}</p>
-                            <p className="mt-2 text-2xl font-semibold">{item.value}%</p>
-                          </div>
-                        ))}
+                  <div className="space-y-6">
+                    <div className="rounded-3xl border border-white/50 bg-white/65 p-6 shadow-lg shadow-slate-900/10 backdrop-blur">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Inspection analytics</p>
+                          <p className="text-3xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
+                          <p className="text-xs text-slate-500">
+                            {classification?.total
+                              ? `AI-assisted evaluation across ${classification.total} uploaded image${classification.total === 1 ? '' : 's'}.`
+                              : noImageData
+                              ? 'Manual scoring active. Update dropdowns to refine the score.'
+                              : 'Upload and classify imagery to activate AI scoring.'}
+                          </p>
+                        </div>
+                        <StatusBadge status={inspectionScore.status} />
                       </div>
                       {classifySummary ? <p className="mt-4 text-xs text-slate-500">{classifySummary}</p> : null}
                     </div>
-                  ) : null}
-                </div>
-              </div>
-            </Section>
 
+                    <div className="rounded-3xl border border-white/50 bg-white/60 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                      <p className="text-sm font-semibold text-slate-900">Progress tracker</p>
+                      <div className="mt-4 space-y-3">
+                        {visualSteps.map((step) => (
+                          <StepItem key={step.id} {...step} />
+                        ))}
+                      </div>
+                    </div>
+
+                    {classificationBreakdown ? (
+                      <div className="rounded-3xl border border-white/50 bg-white/60 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                        <p className="text-sm font-semibold text-slate-900">Classification breakdown</p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {classificationBreakdown.map((item) => (
+                            <div key={item.id} className={`rounded-xl border px-4 py-3 ${item.tone}`}>
+                              <p className="text-xs uppercase tracking-[0.28em] text-slate-500">{item.label}</p>
+                              <p className="mt-2 text-2xl font-semibold">{item.value}%</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </Section>
+              <div className="h-full">
+                <RecommendationCard
+                  suggestion={suggestion}
+                  totalImages={classification?.total ?? 0}
+                  inspectionScore={inspectionScore}
+                  logisticScore={logisticScore}
+                  performanceScore={performanceScore}
+                />
+              </div>
+            </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <Section
                 id="logistic-feasibility"
@@ -1097,14 +1172,14 @@ function App() {
                 variant="compact"
                 className="h-full"
                 meta={
-                  <div className="text-right">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Score</p>
-                    <p className="mt-1 text-xl font-display font-semibold text-slate-900">{logisticScore.percentage.toFixed(1)}%</p>
+                  <div className="text-right space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Score</p>
+                    <p className="text-2xl font-display font-semibold text-slate-900">{logisticScore.percentage.toFixed(1)}%</p>
                     <StatusBadge status={logisticScore.status} />
                   </div>
                 }
               >
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   <SelectField
                     id="item-weight"
                     label="Weight of the structural element"
@@ -1179,14 +1254,14 @@ function App() {
                 variant="compact"
                 className="h-full"
                 meta={
-                  <div className="text-right">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Score</p>
-                    <p className="mt-1 text-xl font-display font-semibold text-slate-900">{performanceScore.percentage.toFixed(1)}%</p>
+                  <div className="text-right space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Score</p>
+                    <p className="text-2xl font-display font-semibold text-slate-900">{performanceScore.percentage.toFixed(1)}%</p>
                     <StatusBadge status={performanceScore.status} />
                   </div>
                 }
               >
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   <SelectField
                     id="data-quality"
                     label="Quality of available data?"
@@ -1356,8 +1431,8 @@ function App() {
               </div>
 
               <div className="space-y-5">
-                <div className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-inner">
-                  <p className="text-sm font-semibold text-slate-700">Emission factors (kgCO₂e/kg)</p>
+                <div className="rounded-3xl border border-white/50 bg-white/60 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                  <p className="text-sm font-semibold text-slate-800">Emission factors (kgCO₂e/kg)</p>
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <NumberField
                       id="lca-ca1a3"
@@ -1386,14 +1461,14 @@ function App() {
                 <button
                   type="button"
                   onClick={calculateCarbon}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-700"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(24,65,99,0.28)] transition hover:shadow-soft"
                 >
                   Calculate carbon impact
                 </button>
 
                 {lcaResult ? (
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-inner">
-                    <p className="text-sm font-semibold text-slate-700">Results</p>
+                  <div className="rounded-3xl border border-white/50 bg-white/60 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                    <p className="text-sm font-semibold text-slate-800">Results</p>
                     <dl className="mt-4 grid gap-4 text-sm text-slate-600">
                       <div className="flex items-center justify-between">
                         <dt>Total weight</dt>
