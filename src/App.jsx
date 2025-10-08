@@ -9,53 +9,70 @@ const round = (value, decimals = 1) => {
   return Math.round(value * factor) / factor;
 };
 
-const Section = ({ id, title, description, isOpen, onToggle, children }) => (
-  <section
-    id={id}
-    className={`group relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-8 shadow-soft transition-all duration-500 ${
-      isOpen ? 'ring-2 ring-brand/30' : 'hover:-translate-y-1 hover:shadow-xl'
-    }`}
-  >
-    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-white/20 to-transparent opacity-0 transition duration-500 group-hover:opacity-80" />
-    <div className="relative">
-      <button
-        type="button"
-        className="flex w-full flex-col gap-4 text-left md:flex-row md:items-start md:justify-between"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-controls={`${id}-content`}
-      >
-        <div className="max-w-3xl space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">Assessment Module</span>
-          <h2 className="text-2xl font-display font-semibold text-brand-dark">{title}</h2>
-          {description ? <p className="text-sm text-slate-600">{description}</p> : null}
+const Section = ({
+  id,
+  title,
+  description,
+  isOpen = true,
+  onToggle,
+  children,
+  variant = 'default',
+  meta,
+  className = '',
+}) => {
+  const collapsible = typeof onToggle === 'function';
+  const containerClasses =
+    variant === 'compact'
+      ? 'rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5 backdrop-blur'
+      : 'rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-slate-900/10 backdrop-blur';
+
+  return (
+    <section id={id} className={`relative overflow-hidden transition-all ${containerClasses} ${className}`}>
+      <div className="relative space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">Assessment Module</span>
+            <h2 className="text-2xl font-display font-semibold text-slate-900">{title}</h2>
+            {description ? <p className="text-sm text-slate-600">{description}</p> : null}
+          </div>
+          <div className="flex items-start gap-3">
+            {meta}
+            {collapsible ? (
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={isOpen}
+                aria-controls={`${id}-content`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all ${
+                  isOpen
+                    ? 'border-slate-200 bg-slate-900 text-white'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
         </div>
-        <span
-          className={`flex h-11 w-11 items-center justify-center rounded-full border border-brand/20 bg-brand/5 text-brand transition-all duration-300 ${
-            isOpen ? 'rotate-180 bg-brand text-white shadow-lg' : 'group-hover:border-brand/40'
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 transition-transform duration-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </span>
-      </button>
-      {isOpen ? (
-        <div id={`${id}-content`} className="mt-8 space-y-8">
-          {children}
-        </div>
-      ) : null}
-    </div>
-  </section>
-);
+        {!collapsible || isOpen ? (
+          <div id={`${id}-content`} className="space-y-6">
+            {children}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+};
 
 const SelectField = ({ id, label, options, value, onChange, required }) => (
   <label className="flex flex-col gap-2 text-sm font-medium text-slate-700" htmlFor={id}>
@@ -138,28 +155,116 @@ const SliderField = ({ id, label, min = 0, max = 1, step = 0.01, value, onChange
   </div>
 );
 
-const statusStyles = (status) =>
+const getStatusBadgeClasses = (status) =>
   status === 'Passed'
-    ? 'bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-200'
-    : 'bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200';
+    ? 'border border-emerald-200 bg-emerald-50 text-emerald-600'
+    : 'border border-amber-200 bg-amber-50 text-amber-600';
 
-const MetricCard = ({ label, value, status, caption, accent, icon, statusClassName }) => {
-  const statusClass = statusClassName ?? statusStyles(status);
-  return (
-    <article className="group relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-6 shadow-soft transition duration-500 hover:-translate-y-1 hover:shadow-xl">
-      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent} opacity-0 transition duration-500 group-hover:opacity-100`} />
-      <div className="relative flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">{label}</p>
-          <p className="mt-3 text-3xl font-display font-semibold text-brand-dark">{value}</p>
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand shadow-inner">
-          {icon}
-        </div>
+const StatusBadge = ({ status }) => (
+  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClasses(status)}`}>
+    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+    {status}
+  </span>
+);
+
+const HighlightCard = ({ title, percentage, status, caption }) => (
+  <article className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-lg shadow-slate-900/5">
+    <div className="flex items-start justify-between">
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{title}</p>
+        <p className="text-3xl font-display font-semibold text-slate-900">{percentage}%</p>
       </div>
-      <div className="relative mt-6 flex items-center justify-between gap-3">
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{status}</span>
-        <span className="text-right text-xs font-medium text-slate-500">{caption}</span>
+      <StatusBadge status={status} />
+    </div>
+    <p className="mt-3 text-xs font-medium text-slate-500">{caption}</p>
+  </article>
+);
+
+const StepItem = ({ title, status, description }) => {
+  const stepStyles = {
+    done: {
+      border: 'border-emerald-100',
+      background: 'bg-emerald-50/80',
+      iconBg: 'bg-emerald-500 text-white',
+      iconPath: 'M5 13l4 4L19 7',
+    },
+    'in-progress': {
+      border: 'border-sky-100',
+      background: 'bg-sky-50/70',
+      iconBg: 'bg-sky-500 text-white',
+      iconPath: 'M12 6v6l3 3',
+    },
+    pending: {
+      border: 'border-slate-200',
+      background: 'bg-white',
+      iconBg: 'bg-slate-100 text-slate-500',
+      iconPath: 'M12 6v6l3 3',
+    },
+    skipped: {
+      border: 'border-slate-200',
+      background: 'bg-slate-50',
+      iconBg: 'bg-slate-200 text-slate-500',
+      iconPath: 'M6 6l12 12M6 18L18 6',
+    },
+  };
+
+  const { border, background, iconBg, iconPath } = stepStyles[status] ?? stepStyles.pending;
+
+  return (
+    <div className={`flex items-start gap-3 rounded-xl border ${border} ${background} p-3`}>
+      <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${iconBg}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+        </svg>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-slate-800">{title}</p>
+        <p className="text-xs text-slate-500">{description}</p>
+      </div>
+    </div>
+  );
+};
+
+const RecommendationCard = ({ suggestion, totalImages }) => {
+  const gradient =
+    suggestion.tone === 'success'
+      ? 'from-emerald-500 via-emerald-600 to-emerald-700'
+      : 'from-amber-500 via-amber-600 to-amber-700';
+
+  return (
+    <article className={`relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-br ${gradient} p-6 text-white shadow-xl shadow-slate-900/10`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),transparent_55%)] opacity-80" aria-hidden="true" />
+      <div className="relative space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">End-of-life recommendation</span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            {suggestion.label}
+          </span>
+        </div>
+        <p className="text-2xl font-display font-semibold">{suggestion.tone === 'success' ? 'Reuse the asset' : 'Recycle with recovery plan'}</p>
+        <p className="text-sm text-white/80">
+          Aggregated insight from the visual inspection, logistics, and structural performance modules.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Overall readiness</p>
+            <p className="mt-2 text-3xl font-display font-semibold">{suggestion.overall}%</p>
+          </div>
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">Recommended action</p>
+            <p className="mt-2 text-sm font-medium text-white">
+              {suggestion.tone === 'success'
+                ? 'Proceed with dismantling for reuse and plan selective refurbishment.'
+                : 'Prepare for deconstruction and recycling to maximise material recovery.'}
+            </p>
+          </div>
+        </div>
+        {totalImages ? (
+          <p className="text-xs font-medium text-white/70">{totalImages} classified image{totalImages === 1 ? '' : 's'} informed this recommendation.</p>
+        ) : (
+          <p className="text-xs font-medium text-white/70">Manual scoring currently informs this recommendation.</p>
+        )}
       </div>
     </article>
   );
@@ -190,9 +295,10 @@ function App() {
   const [modelError, setModelError] = useState(null);
 
   const [visualOpen, setVisualOpen] = useState(true);
-  const [logisticOpen, setLogisticOpen] = useState(false);
-  const [performanceOpen, setPerformanceOpen] = useState(false);
-  const [lcaOpen, setLcaOpen] = useState(false);
+  const [logisticOpen, setLogisticOpen] = useState(true);
+  const [performanceOpen, setPerformanceOpen] = useState(true);
+  const [lcaOpen, setLcaOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState('assessment');
 
   const [previews, setPreviews] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -245,9 +351,15 @@ function App() {
   const [lcaResult, setLcaResult] = useState(null);
 
   useEffect(() => {
-    alert(
-      'Disclaimer:\n\nReuST is currently under development and is intended for testing purposes only. As the accuracy and reliability of the results are limited, the provided results should not be used in real-world scenarios. Use the results with caution and always consult with relevant experts for reliable assessments.'
-    );
+    const storageKey = 'reust-disclaimer-shown';
+    if (typeof window === 'undefined') return;
+    const hasSeenDisclaimer = sessionStorage.getItem(storageKey);
+    if (!hasSeenDisclaimer) {
+      alert(
+        'Disclaimer:\n\nReuST is currently under development and is intended for testing purposes only. As the accuracy and reliability of the results are limited, the provided results should not be used in real-world scenarios. Use the results with caution and always consult with relevant experts for reliable assessments.'
+      );
+      sessionStorage.setItem(storageKey, 'true');
+    }
   }, []);
 
   useEffect(() => {
@@ -482,162 +594,123 @@ function App() {
     )}% not damaged.`;
   }, [classification]);
 
-  const summaryCards = useMemo(() => {
-    const logisticComplete = Object.values(logisticInputs).some((value) => value !== '');
-    const performanceComplete = Object.values(performanceInputs).some((value) => value !== '');
-    const visualCaption = classification?.total
-      ? `AI-assisted · ${classification.total} image${classification.total > 1 ? 's' : ''}`
-      : noImageData
-      ? 'Manual scoring active'
-      : 'Provide inspection evidence';
-    const logisticCaption = logisticComplete ? 'Inputs captured' : 'Awaiting data';
-    const performanceCaption = performanceComplete ? 'Inputs captured' : 'Awaiting data';
-    const recommendationCaption =
-      suggestion.tone === 'success' ? 'Reuse pathway recommended' : 'Recycling recommended';
-    const recommendationAccent =
-      suggestion.tone === 'success'
-        ? 'from-emerald-300/40 via-emerald-200/40 to-transparent'
-        : 'from-amber-300/40 via-amber-200/40 to-transparent';
+  const logisticComplete = useMemo(() => Object.values(logisticInputs).some((value) => value !== ''), [logisticInputs]);
+  const performanceComplete = useMemo(
+    () => Object.values(performanceInputs).some((value) => value !== ''),
+    [performanceInputs]
+  );
 
+  const logisticCaption = logisticComplete ? 'Inputs captured' : 'Awaiting data';
+  const performanceCaption = performanceComplete ? 'Inputs captured' : 'Awaiting data';
+
+  const classificationBreakdown = useMemo(() => {
+    if (!classification || !classification.total) {
+      return null;
+    }
+
+    const total = classification.total || 1;
     return [
       {
-        id: 'visual',
-        label: 'Visual Inspection',
-        value: `${inspectionScore.percentage.toFixed(1)}%`,
-        status: inspectionScore.status,
-        caption: visualCaption,
-        accent: 'from-emerald-300/30 via-emerald-200/40 to-transparent',
-        icon: (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h4l1-2h8l1 2h4m-2 0a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2m7 3a4 4 0 110 8 4 4 0 010-8z" />
-          </svg>
-        ),
+        id: 'not-corroded',
+        label: 'Not corroded',
+        value: round((classification.notCorroded / total) * 100),
+        tone: 'border-emerald-200 bg-emerald-50 text-emerald-600',
       },
       {
-        id: 'logistic',
-        label: 'Logistic Feasibility',
-        value: `${logisticScore.percentage.toFixed(1)}%`,
-        status: logisticScore.status,
-        caption: logisticCaption,
-        accent: 'from-sky-300/30 via-sky-200/40 to-transparent',
-        icon: (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10-2v-4a1 1 0 00-1-1h-5V7h3l3 3h2a1 1 0 011 1v4m-4 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-        ),
+        id: 'corroded',
+        label: 'Corroded',
+        value: round((classification.corroded / total) * 100),
+        tone: 'border-amber-200 bg-amber-50 text-amber-600',
       },
       {
-        id: 'performance',
-        label: 'Structural Performance',
-        value: `${performanceScore.percentage.toFixed(1)}%`,
-        status: performanceScore.status,
-        caption: performanceCaption,
-        accent: 'from-indigo-300/30 via-indigo-200/40 to-transparent',
-        icon: (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M15 11a3 3 0 11-6 0 3 3 0 016 0zm6 0a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        ),
+        id: 'bolted',
+        label: 'Bolted',
+        value: round((classification.bolted / total) * 100),
+        tone: 'border-sky-200 bg-sky-50 text-sky-600',
       },
       {
-        id: 'decision',
-        label: 'Decision Pathway',
-        value: `${suggestion.overall}%`,
-        status: suggestion.label,
-        caption: recommendationCaption,
-        accent: recommendationAccent,
-        statusClassName:
-          suggestion.tone === 'success'
-            ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-300'
-            : 'bg-amber-400/20 text-amber-700 ring-1 ring-inset ring-amber-300',
-        icon: (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4.318 6.318a4.5 4.5 0 010 6.364L3 14l4 4 1.318-1.318a4.5 4.5 0 016.364 0L16 19l4-4-1.318-1.318a4.5 4.5 0 000-6.364L16 6l-1.318 1.318a4.5 4.5 0 01-6.364 0L7 6l-2.682.318z"
-            />
-          </svg>
-        ),
+        id: 'welded',
+        label: 'Welded',
+        value: round((classification.welded / total) * 100),
+        tone: 'border-indigo-200 bg-indigo-50 text-indigo-600',
+      },
+      {
+        id: 'not-damaged',
+        label: 'Not damaged',
+        value: round((classification.notDamaged / total) * 100),
+        tone: 'border-emerald-200 bg-emerald-50 text-emerald-600',
+      },
+      {
+        id: 'damaged',
+        label: 'Damaged',
+        value: round((classification.damaged / total) * 100),
+        tone: 'border-rose-200 bg-rose-50 text-rose-600',
       },
     ];
-  }, [
-    classification,
-    inspectionScore,
-    logisticInputs,
-    logisticScore,
-    noImageData,
-    performanceInputs,
-    performanceScore,
-    suggestion,
-  ]);
+  }, [classification]);
 
-  const moduleSummaries = useMemo(
-    () => [
-      {
-        id: 'visual',
-        label: 'Visual inspection',
-        percentage: inspectionScore.percentage.toFixed(1),
-        status: inspectionScore.status,
-        description: 'Condition & connection integrity',
-      },
-      {
-        id: 'logistic',
-        label: 'Logistic feasibility',
-        percentage: logisticScore.percentage.toFixed(1),
-        status: logisticScore.status,
-        description: 'Dismantling & handling readiness',
-      },
-      {
-        id: 'performance',
-        label: 'Structural performance',
-        percentage: performanceScore.percentage.toFixed(1),
-        status: performanceScore.status,
-        description: 'Reliability & reuse potential',
-      },
-    ],
-    [inspectionScore, logisticScore, performanceScore]
-  );
+  const hasEvidence = previews.length > 0 || noImageData;
+
+  const visualSteps = useMemo(() => {
+    const steps = [];
+    steps.push({
+      id: 'evidence',
+      title: 'Evidence captured',
+      status: hasEvidence ? 'done' : 'pending',
+      description: hasEvidence
+        ? noImageData
+          ? 'Manual inspection inputs enabled.'
+          : `${previews.length} image${previews.length === 1 ? '' : 's'} ready for review.`
+        : 'Upload imagery or switch to manual scoring.',
+    });
+
+    steps.push({
+      id: 'classification',
+      title: noImageData ? 'Manual scoring in progress' : 'AI classification',
+      status: noImageData ? 'skipped' : isClassifying ? 'in-progress' : classification ? 'done' : 'pending',
+      description: noImageData
+        ? 'Image classification skipped because manual scoring is active.'
+        : classification
+        ? 'Latest run completed successfully.'
+        : 'Run classification to unlock decision guidance.',
+    });
+
+    steps.push({
+      id: 'decision',
+      title: 'Decision summary prepared',
+      status: classification || noImageData ? 'done' : 'pending',
+      description:
+        classification || noImageData
+          ? `${suggestion.label} · Overall ${suggestion.overall}%`
+          : 'Decision pending classification results.',
+    });
+
+    return steps;
+  }, [classification, hasEvidence, isClassifying, noImageData, previews.length, suggestion.label, suggestion.overall]);
+
+  const highlightCards = [
+    {
+      id: 'logistic',
+      title: 'Logistic feasibility',
+      percentage: logisticScore.percentage.toFixed(1),
+      status: logisticScore.status,
+      caption: logisticCaption,
+    },
+    {
+      id: 'performance',
+      title: 'Structural performance',
+      percentage: performanceScore.percentage.toFixed(1),
+      status: performanceScore.status,
+      caption: performanceCaption,
+    },
+  ];
+
+  const tabClass = (tab) =>
+    `rounded-full px-4 py-2 text-sm font-semibold transition ${
+      activeTab === tab
+        ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
+        : 'text-slate-500 hover:text-slate-900'
+    }`;
 
   const calculateCarbon = useCallback(() => {
     let totalWeight = 0;
@@ -671,56 +744,38 @@ function App() {
     });
   }, [lcaInputs, lcaMode]);
 
-  const recommendationAccent =
-    suggestion.tone === 'success'
-      ? 'from-emerald-200/60 via-emerald-100/70 to-transparent'
-      : 'from-amber-200/60 via-amber-100/70 to-transparent';
-
-  const overallTone =
-    suggestion.tone === 'success'
-      ? 'from-emerald-500 via-emerald-600 to-emerald-700 text-white'
-      : 'from-amber-100 via-amber-200 to-amber-300 text-amber-900';
-
   return (
-    <div className="relative min-h-screen overflow-hidden pb-16">
+    <div className="relative min-h-screen overflow-hidden bg-slate-100">
       <div
-        className="pointer-events-none absolute -top-40 left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-brand/40 blur-3xl animate-pulse-soft"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,70,229,0.08),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_55%)]"
         aria-hidden="true"
       />
-      <div
-        className="pointer-events-none absolute -bottom-48 left-[-10%] h-[26rem] w-[26rem] rounded-full bg-sky-400/30 blur-3xl animate-float"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute bottom-[-12rem] right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-emerald-400/25 blur-3xl animate-float"
-        aria-hidden="true"
-      />
-      <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-16 text-slate-900">
-        <header className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/80 p-10 shadow-soft backdrop-blur">
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-light/80 via-white/90 to-white/60 opacity-90"
-            aria-hidden="true"
-          />
-          <div className="relative flex flex-col gap-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-4">
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-brand">
-                  <span className="h-2 w-2 rounded-full bg-brand-dark" />
+      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 pb-24 pt-10 text-slate-900">
+        <header className="rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-xl shadow-slate-900/10 backdrop-blur">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-3">
+                <span className="inline-flex items-center gap-2 self-start rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">
                   Beta workspace
                 </span>
-                <div className="flex flex-wrap items-center gap-6">
-                  <img src="/assets/logo.png" alt="ReuST logo" className="h-16 w-auto" />
-                  <div className="space-y-3">
-                    <h1 className="text-4xl font-display font-semibold tracking-tight text-brand-dark">ReuST Decision Studio</h1>
-                    <p className="max-w-2xl text-sm text-slate-600">
-                      Harmonise visual inspections, logistic constraints, structural performance, and carbon insights to guide reuse strategies for structural steel elements.
-                    </p>
-                  </div>
-                </div>
+                <h1 className="text-4xl font-display font-semibold text-slate-900">ReuST decision studio</h1>
+                <p className="max-w-2xl text-sm text-slate-600">
+                  Prioritise reuse decisions with a professional dashboard that unifies visual inspections, logistics, and structural performance intelligence.
+                </p>
               </div>
-              <div className="rounded-3xl border border-brand/20 bg-white/90 p-5 text-sm text-slate-600 shadow-inner backdrop-blur">
-                <p className="font-semibold text-brand-dark">Need support?</p>
-                <a href="mailto:alper.kanyilmaz@polimi.it" className="mt-2 inline-flex items-center gap-2 font-medium text-brand hover:underline">
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex items-center gap-2 rounded-full bg-slate-100 p-1">
+                  <button type="button" className={tabClass('assessment')} onClick={() => setActiveTab('assessment')}>
+                    Assessment workspace
+                  </button>
+                  <button type="button" className={tabClass('life-cycle')} onClick={() => setActiveTab('life-cycle')}>
+                    Life cycle (LCA)
+                  </button>
+                </div>
+                <a
+                  href="mailto:alper.kanyilmaz@polimi.it"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4"
@@ -732,12 +787,12 @@ function App() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
                   </svg>
-                  alper.kanyilmaz@polimi.it
+                  Need support?
                 </a>
-                <p className="mt-4 text-xs text-slate-500">
-                  Prototype for evaluation purposes only. Validate results with your engineering team before implementation.
-                </p>
               </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-xs text-slate-500">
+              Prototype for evaluation purposes only. Validate the outputs with your engineering team before implementation.
             </div>
             {loadingModels ? (
               <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-700 shadow-sm">
@@ -748,623 +803,625 @@ function App() {
             {modelError ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-4 py-3 text-sm text-rose-700 shadow-sm">{modelError}</div>
             ) : null}
-            <nav className="flex flex-wrap gap-3 text-xs font-semibold text-brand">
-              <a
-                href="#visual-inspection"
-                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
-              >
-                Visual inspection
-              </a>
-              <a
-                href="#logistic-feasibility"
-                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
-              >
-                Logistics
-              </a>
-              <a
-                href="#structural-performance"
-                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
-              >
-                Performance
-              </a>
-              <a
-                href="#life-cycle"
-                className="rounded-full border border-brand/20 bg-white/70 px-4 py-1.5 transition hover:border-brand hover:bg-brand/10"
-              >
-                Life cycle
-              </a>
-            </nav>
           </div>
         </header>
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => (
-            <MetricCard key={card.id} {...card} />
-          ))}
-        </section>
-
-        <Section
-          id="visual-inspection"
-          title="Structural Visual Inspection"
-          description="Upload images to leverage the convolutional neural network or switch to manual scoring if images are unavailable."
-          isOpen={visualOpen}
-          onToggle={() => setVisualOpen((value) => !value)}
-        >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-6">
-              <div>
-                <label className="flex items-center gap-3 text-sm font-medium text-slate-700">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
-                    checked={noImageData}
-                    onChange={(event) => {
-                      const checked = event.target.checked;
-                      setNoImageData(checked);
-                      if (checked) {
-                        setPreviews([]);
-                        setClassification(null);
-                      }
-                    }}
-                    disabled={previews.length > 0}
-                  />
-                  Don't have image files?
-                </label>
-                <p className="mt-2 text-sm text-slate-500">
-                  Enable this option to provide manual inspection data instead of image-based classification.
-                </p>
-              </div>
-
-              {!noImageData ? (
-                <div
-                  onDragEnter={(event) => {
-                    event.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={(event) => {
-                    event.preventDefault();
-                    setIsDragging(false);
-                  }}
-                  onDrop={handleDrop}
-                  className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
-                    isDragging ? 'border-brand bg-brand-light/60' : 'border-slate-300 bg-white'
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => document.getElementById('image-input')?.click()}
-                >
-                  <img
-                    src="https://cdn2.iconfinder.com/data/icons/ios-7-icons/50/upload-512.png"
-                    alt="Upload"
-                    className="h-16 w-16 opacity-70"
-                  />
-                  <div className="text-sm text-slate-600">
-                    <span className="font-semibold text-brand">Click to upload</span> or drag and drop structural element images.
+        {activeTab === 'assessment' ? (
+          <>
+            <Section
+              id="visual-inspection"
+              title="Structural visual inspection"
+              description="Upload evidence or switch to manual scoring to derive a reliable structural condition score."
+              isOpen={visualOpen}
+              onToggle={() => setVisualOpen((value) => !value)}
+              meta={
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inspection score</p>
+                  <p className="mt-1 text-2xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
+                  <StatusBadge status={inspectionScore.status} />
+                </div>
+              }
+            >
+              <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
+                    <label className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
+                        checked={noImageData}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setNoImageData(checked);
+                          if (checked) {
+                            setPreviews([]);
+                            setClassification(null);
+                          }
+                        }}
+                        disabled={previews.length > 0}
+                      />
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-slate-800">Work without imagery</p>
+                        <p className="text-xs text-slate-500">Switch to manual scoring when site photos are unavailable.</p>
+                      </div>
+                    </label>
                   </div>
-                  <input
-                    id="image-input"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(event) => handleFiles(event.target.files)}
-                    className="hidden"
-                  />
-                  {previews.length ? (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        resetImages();
+
+                  {!noImageData ? (
+                    <div
+                      onDragEnter={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
                       }}
-                      className="rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+                      }}
+                      onDrop={handleDrop}
+                      className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                        isDragging ? 'border-slate-500 bg-slate-100' : 'border-slate-300 bg-white'
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => document.getElementById('image-input')?.click()}
                     >
-                      Clear images
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {previews.length ? (
-                <div className="grid max-h-60 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
-                  {previews.map((src, index) => (
-                    <img key={index} src={src} alt={`Uploaded preview ${index + 1}`} className="h-20 w-full rounded-xl object-cover" />
-                  ))}
-                </div>
-              ) : null}
-
-              {!noImageData ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={classifyImages}
-                    className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/40"
-                    disabled={isClassifying}
-                  >
-                    {isClassifying ? (
-                      <svg
-                        className="h-4 w-4 animate-spin"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12" />
                       </svg>
+                      <div className="text-sm text-slate-600">
+                        <span className="font-semibold text-slate-800">Upload structural imagery</span> or drag & drop files here.
+                      </div>
+                      <input
+                        id="image-input"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(event) => handleFiles(event.target.files)}
+                        className="hidden"
+                      />
+                    </div>
+                  ) : null}
+
+                  {previews.length ? (
+                    <div className="grid max-h-60 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
+                      {previews.map((src, index) => (
+                        <img key={index} src={src} alt={`Uploaded preview ${index + 1}`} className="h-20 w-full rounded-xl object-cover" />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    {!noImageData ? (
+                      <button
+                        type="button"
+                        onClick={classifyImages}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-700"
+                        disabled={isClassifying}
+                      >
+                        {isClassifying ? (
+                          <svg
+                            className="h-4 w-4 animate-spin"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          </svg>
+                        ) : null}
+                        {isClassifying ? 'Running classification…' : 'Run AI classification'}
+                      </button>
                     ) : null}
-                    {isClassifying ? 'Classifying…' : 'Classify and Decide'}
-                  </button>
-                  {classification ? (
-                    <span className="text-xs font-semibold uppercase tracking-wider text-brand">{classification.total} image(s) analysed</span>
+                    {(previews.length || noImageData) && (
+                      <button
+                        type="button"
+                        onClick={resetImages}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        Reset evidence
+                      </button>
+                    )}
+                    {classification ? (
+                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        {classification.total} image{classification.total === 1 ? '' : 's'} analysed
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+                    <h3 className="text-base font-semibold text-slate-900">
+                      {noImageData ? 'Manual inspection scoring' : 'Refine inspection inputs'}
+                    </h3>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {noImageData
+                        ? 'Enter qualitative observations to estimate the inspection score.'
+                        : 'Fine-tune the automated output with on-site knowledge.'}
+                    </p>
+                    <div className="mt-4 space-y-4">
+                      <SliderField
+                        id="connection-type"
+                        label="Connection type [fully welded - fully bolted]?"
+                        value={connectionSlider}
+                        onChange={setConnectionSlider}
+                      />
+                      <SelectField
+                        id="corroded"
+                        label="Is the element corroded?"
+                        value={visualInputs.corroded}
+                        onChange={(value) => setVisualInputs((state) => ({ ...state, corroded: value }))}
+                        options={[
+                          { value: '0', label: 'Yes' },
+                          { value: '1', label: 'No' },
+                        ]}
+                      />
+                      <SelectField
+                        id="damaged"
+                        label="Is the element damaged or distorted?"
+                        value={visualInputs.damaged}
+                        onChange={(value) => setVisualInputs((state) => ({ ...state, damaged: value }))}
+                        options={[
+                          { value: '0', label: 'Yes' },
+                          { value: '1', label: 'No' },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <h3 className="text-base font-semibold text-slate-900">Extended building context</h3>
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
+                          checked={optionalVisualData}
+                          onChange={(event) => setOptionalVisualData(event.target.checked)}
+                        />
+                        Provide additional information
+                      </label>
+                    </div>
+                    {optionalVisualData ? (
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <SelectField
+                          id="composite-connection"
+                          label="Are there steel-concrete composite connections?"
+                          value={visualInputs.compositeConnection}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, compositeConnection: value }))}
+                          options={[
+                            { value: '0', label: 'Yes' },
+                            { value: '1', label: 'No' },
+                          ]}
+                        />
+                        <SelectField
+                          id="fire-protection"
+                          label="Is there fire protection on the element?"
+                          value={visualInputs.fireProtection}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, fireProtection: value }))}
+                          options={[
+                            { value: '1', label: 'Yes' },
+                            { value: '0', label: 'No' },
+                          ]}
+                        />
+                        <SelectField
+                          id="sufficient-amount"
+                          label="Availability of sufficient reusable elements?"
+                          value={visualInputs.sufficientAmount}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, sufficientAmount: value }))}
+                          options={[
+                            { value: '1', label: 'Yes' },
+                            { value: '0', label: 'No' },
+                          ]}
+                        />
+                        <SelectField
+                          id="geometry-check"
+                          label="Passes geometric checks without modification?"
+                          value={visualInputs.geometryCheck}
+                          onChange={(value) => setVisualInputs((state) => ({ ...state, geometryCheck: value }))}
+                          options={[
+                            { value: '1', label: 'Yes' },
+                            { value: '0', label: 'No' },
+                          ]}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-slate-500">Enable the toggle to capture detailed project context.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-lg shadow-slate-900/5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Composite score</p>
+                        <p className="text-3xl font-display font-semibold text-slate-900">{inspectionScore.percentage.toFixed(1)}%</p>
+                        <p className="text-xs text-slate-500">
+                          {classification?.total
+                            ? `AI-assisted evaluation across ${classification.total} uploaded image${classification.total === 1 ? '' : 's'}.`
+                            : noImageData
+                            ? 'Manual scoring active. Update dropdowns to refine the score.'
+                            : 'Upload and classify imagery to activate AI scoring.'}
+                        </p>
+                      </div>
+                      <StatusBadge status={inspectionScore.status} />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {highlightCards.map((card) => (
+                      <HighlightCard key={card.id} {...card} />
+                    ))}
+                  </div>
+
+                  <RecommendationCard suggestion={suggestion} totalImages={classification?.total ?? 0} />
+
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-900">Progress tracker</p>
+                    <div className="mt-4 space-y-3">
+                      {visualSteps.map((step) => (
+                        <StepItem key={step.id} {...step} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {classificationBreakdown ? (
+                    <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+                      <p className="text-sm font-semibold text-slate-900">Classification breakdown</p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {classificationBreakdown.map((item) => (
+                          <div key={item.id} className={`rounded-xl border px-4 py-3 ${item.tone}`}>
+                            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">{item.label}</p>
+                            <p className="mt-2 text-2xl font-semibold">{item.value}%</p>
+                          </div>
+                        ))}
+                      </div>
+                      {classifySummary ? <p className="mt-4 text-xs text-slate-500">{classifySummary}</p> : null}
+                    </div>
                   ) : null}
                 </div>
-              ) : null}
-
-              {classifySummary ? (
-                <p className="rounded-2xl border border-brand/30 bg-brand-light/60 p-4 text-sm text-brand-dark">{classifySummary}</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-white/60 bg-white/80 p-5 shadow-inner">
-                <h3 className="text-lg font-semibold text-brand-dark">
-                  {noImageData ? 'Provide inspection scores' : 'Manual adjustments'}
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  {noImageData
-                    ? 'Enter your qualitative assessment to estimate the visual inspection score.'
-                    : 'Fine tune inspection outcomes if additional context is available.'}
-                </p>
-                <div className="mt-4 space-y-4">
-                  <SliderField
-                    id="connection-type"
-                    label="Connection type [fully welded - fully bolted]?"
-                    value={connectionSlider}
-                    onChange={setConnectionSlider}
-                  />
-                  <SelectField
-                    id="corroded"
-                    label="Is the element corroded?"
-                    value={visualInputs.corroded}
-                    onChange={(value) => setVisualInputs((state) => ({ ...state, corroded: value }))}
-                    options={[
-                      { value: '0', label: 'Yes' },
-                      { value: '1', label: 'No' },
-                    ]}
-                  />
-                  <SelectField
-                    id="damaged"
-                    label="Is the element damaged or distorted?"
-                    value={visualInputs.damaged}
-                    onChange={(value) => setVisualInputs((state) => ({ ...state, damaged: value }))}
-                    options={[
-                      { value: '0', label: 'Yes' },
-                      { value: '1', label: 'No' },
-                    ]}
-                  />
-                </div>
               </div>
+            </Section>
 
-              <div className="rounded-2xl border border-white/60 bg-white/80 p-5 shadow-inner">
-                <label className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
-                    checked={optionalVisualData}
-                    onChange={(event) => setOptionalVisualData(event.target.checked)}
-                  />
-                  Do you have additional information on the building?
-                </label>
-                {optionalVisualData ? (
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <SelectField
-                      id="composite-connection"
-                      label="Are there steel-concrete composite connections?"
-                      value={visualInputs.compositeConnection}
-                      onChange={(value) => setVisualInputs((state) => ({ ...state, compositeConnection: value }))}
-                      options={[
-                        { value: '0', label: 'Yes' },
-                        { value: '1', label: 'No' },
-                      ]}
-                    />
-                    <SelectField
-                      id="fire-protection"
-                      label="Is there fire protection on the element?"
-                      value={visualInputs.fireProtection}
-                      onChange={(value) => setVisualInputs((state) => ({ ...state, fireProtection: value }))}
-                      options={[
-                        { value: '1', label: 'Yes' },
-                        { value: '0', label: 'No' },
-                      ]}
-                    />
-                    <SelectField
-                      id="sufficient-amount"
-                      label="Availability of sufficient amount of potential reusable elements?"
-                      value={visualInputs.sufficientAmount}
-                      onChange={(value) => setVisualInputs((state) => ({ ...state, sufficientAmount: value }))}
-                      options={[
-                        { value: '1', label: 'Yes' },
-                        { value: '0', label: 'No' },
-                      ]}
-                    />
-                    <SelectField
-                      id="geometry-check"
-                      label="Does the element pass standard geometric check without modification?"
-                      value={visualInputs.geometryCheck}
-                      onChange={(value) => setVisualInputs((state) => ({ ...state, geometryCheck: value }))}
-                      options={[
-                        { value: '1', label: 'Yes' },
-                        { value: '0', label: 'No' },
-                      ]}
-                    />
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Section
+                id="logistic-feasibility"
+                title="Logistic feasibility"
+                description="Capture dismantling, handling, and storage considerations to understand feasibility constraints."
+                isOpen={logisticOpen}
+                onToggle={() => setLogisticOpen((value) => !value)}
+                variant="compact"
+                className="h-full"
+                meta={
+                  <div className="text-right">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Score</p>
+                    <p className="mt-1 text-xl font-display font-semibold text-slate-900">{logisticScore.percentage.toFixed(1)}%</p>
+                    <StatusBadge status={logisticScore.status} />
                   </div>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-500">Enable the toggle above to provide additional building insights.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </Section>
-
-        <Section
-          id="logistic-feasibility"
-          title="Logistic Feasibility"
-          description="Assess the practical considerations for dismantling, handling, and storing structural elements."
-          isOpen={logisticOpen}
-          onToggle={() => setLogisticOpen((value) => !value)}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <SelectField
-              id="item-weight"
-              label="Weight of the structural element"
-              value={logisticInputs.itemWeight}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, itemWeight: value }))}
-              options={[
-                { value: '3', label: 'Very light [< 0.1 ton]' },
-                { value: '2', label: 'Light [0.1 - 0.2 ton]' },
-                { value: '1', label: 'Heavy [0.2 - 0.5 ton]' },
-                { value: '0', label: 'Very heavy [> 0.5 ton]' },
-              ]}
-            />
-            <SelectField
-              id="easy-handle"
-              label="Ease to handle, transport, store, and process?"
-              value={logisticInputs.easyHandle}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, easyHandle: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="exist-infrastructure"
-              label="Availability of dismantle-sort-repair infrastructure"
-              value={logisticInputs.existInfrastructure}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, existInfrastructure: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="special-protection"
-              label="Special protection is needed for transportation?"
-              value={logisticInputs.specialProtection}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, specialProtection: value }))}
-              options={[
-                { value: '0', label: 'Yes' },
-                { value: '1', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="dismantle-phase"
-              label="Dismantle phase is compatible with demolition work?"
-              value={logisticInputs.dismantlePhase}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, dismantlePhase: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="storage-availability"
-              label="Availability of storage"
-              value={logisticInputs.storageAvailability}
-              onChange={(value) => setLogisticInputs((state) => ({ ...state, storageAvailability: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-          </div>
-        </Section>
-
-        <Section
-          id="structural-performance"
-          title="Structural Performance"
-          description="Evaluate the documentation, maintenance, and adaptability of the structural elements."
-          isOpen={performanceOpen}
-          onToggle={() => setPerformanceOpen((value) => !value)}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <SelectField
-              id="data-quality"
-              label="Quality of available data?"
-              value={performanceInputs.dataQuality}
-              onChange={(value) => setPerformanceInputs((state) => ({ ...state, dataQuality: value }))}
-              options={[
-                { value: '0', label: 'No documentation' },
-                { value: '1', label: 'Only drawing available' },
-                { value: '2', label: 'Drawings and calculation report available' },
-                { value: '3', label: 'All detailed documentation available' },
-              ]}
-            />
-            <SelectField
-              id="construction-period"
-              label="Is the building designed and constructed after year 2005?"
-              value={performanceInputs.constructionPeriod}
-              onChange={(value) => setPerformanceInputs((state) => ({ ...state, constructionPeriod: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="maintenance"
-              label="Did the structure have maintenance before?"
-              value={performanceInputs.maintenance}
-              onChange={(value) => setPerformanceInputs((state) => ({ ...state, maintenance: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="purpose"
-              label="Is the structural element unique for its purpose?"
-              value={performanceInputs.purpose}
-              onChange={(value) => setPerformanceInputs((state) => ({ ...state, purpose: value }))}
-              options={[
-                { value: '0', label: 'Yes' },
-                { value: '1', label: 'No' },
-              ]}
-            />
-            <SelectField
-              id="testing"
-              label="Is it possible to conduct sample testing?"
-              value={performanceInputs.testing}
-              onChange={(value) => setPerformanceInputs((state) => ({ ...state, testing: value }))}
-              options={[
-                { value: '1', label: 'Yes' },
-                { value: '0', label: 'No' },
-              ]}
-            />
-          </div>
-        </Section>
-
-        <Section
-          id="life-cycle"
-          title="Life Cycle Assessment (LCA)"
-          description="Estimate embodied carbon through simplified cradle-to-cradle calculations."
-          isOpen={lcaOpen}
-          onToggle={() => setLcaOpen((value) => !value)}
-        >
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-            <div className="space-y-4">
-              <p className="text-sm text-slate-600">Select how you prefer to input the weight of the elements.</p>
-              <div className="grid gap-3 md:grid-cols-3">
-                <ToggleCard
-                  active={lcaMode === 'weight'}
-                  title="Weight"
-                  description="Weight × quantity"
-                  onClick={() => setLcaMode('weight')}
-                />
-                <ToggleCard
-                  active={lcaMode === 'dimensions'}
-                  title="Dimensions"
-                  description="Volume × unit weight"
-                  onClick={() => setLcaMode('dimensions')}
-                />
-                <ToggleCard
-                  active={lcaMode === 'bulk'}
-                  title="Bulk weight"
-                  description="Direct total mass"
-                  onClick={() => setLcaMode('bulk')}
-                />
-              </div>
-
-              {lcaMode === 'weight' ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NumberField
-                    id="lca-weight"
-                    label="Weight of single element [kg]"
-                    value={lcaInputs.weight}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, weight: value }))}
-                    placeholder="150"
-                    min="0"
-                  />
-                  <NumberField
-                    id="lca-items"
-                    label="Number of items"
-                    value={lcaInputs.items}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, items: value }))}
-                    placeholder="50"
-                    min="0"
-                  />
-                </div>
-              ) : null}
-
-              {lcaMode === 'dimensions' ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NumberField
-                    id="lca-height"
-                    label="Height of the element [mm]"
-                    value={lcaInputs.height}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, height: value }))}
-                    placeholder="500"
-                    min="0"
-                  />
-                  <NumberField
-                    id="lca-width"
-                    label="Width of the element [mm]"
-                    value={lcaInputs.width}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, width: value }))}
-                    placeholder="250"
-                    min="0"
-                  />
-                  <NumberField
-                    id="lca-length"
-                    label="Length of the element [m]"
-                    value={lcaInputs.length}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, length: value }))}
-                    placeholder="12"
-                    min="0"
-                  />
-                  <NumberField
-                    id="lca-unit-weight"
-                    label="Material unit weight [kg/m³]"
-                    value={lcaInputs.unitWeight}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, unitWeight: value }))}
-                    placeholder="7850"
-                    min="0"
-                  />
-                  <NumberField
-                    id="lca-quantity"
-                    label="Number of items"
-                    value={lcaInputs.quantity}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, quantity: value }))}
-                    placeholder="12"
-                    min="0"
-                  />
-                </div>
-              ) : null}
-
-              {lcaMode === 'bulk' ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NumberField
-                    id="lca-bulk"
-                    label="Bulk weight of the material [kg]"
-                    value={lcaInputs.bulkWeight}
-                    onChange={(value) => setLcaInputs((state) => ({ ...state, bulkWeight: value }))}
-                    placeholder="1500"
-                    min="0"
-                  />
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <NumberField
-                  id="lca-ca1a3"
-                  label="Product stage A1-A3 coefficient [kgCO₂e]"
-                  value={lcaInputs.cA1A3}
-                  onChange={(value) => setLcaInputs((state) => ({ ...state, cA1A3: value }))}
-                  step="0.01"
-                />
-                <NumberField
-                  id="lca-cc1c4"
-                  label="End of life stage C1-C4 coefficient [kgCO₂e]"
-                  value={lcaInputs.cC1C4}
-                  onChange={(value) => setLcaInputs((state) => ({ ...state, cC1C4: value }))}
-                  step="0.01"
-                />
-                <NumberField
-                  id="lca-cd"
-                  label="Reuse/recycle stage D coefficient [kgCO₂e]"
-                  value={lcaInputs.cD}
-                  onChange={(value) => setLcaInputs((state) => ({ ...state, cD: value }))}
-                  step="0.01"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={calculateCarbon}
-                className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/40"
+                }
               >
-                Compute the embodied carbon
-              </button>
-
-              {lcaResult ? (
-                <div className="rounded-2xl border border-brand/30 bg-brand-light/60 p-5 text-sm text-brand-dark">
-                  <p>
-                    Total weight of structural element: <strong>{lcaResult.totalWeight} kg</strong>
-                  </p>
-                  <p>
-                    Product stage A1-A3: <strong>{lcaResult.product} kgCO₂e</strong>
-                  </p>
-                  <p>
-                    End of life stage C1-C4: <strong>{lcaResult.endOfLife} kgCO₂e</strong>
-                  </p>
-                  <p>
-                    Reuse, recycle and recovery stage D: <strong>{lcaResult.recovery} kgCO₂e</strong>
-                  </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <SelectField
+                    id="item-weight"
+                    label="Weight of the structural element"
+                    value={logisticInputs.itemWeight}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, itemWeight: value }))}
+                    options={[
+                      { value: '3', label: 'Very light (<0.1 t)' },
+                      { value: '2', label: 'Light (0.1–0.2 t)' },
+                      { value: '1', label: 'Heavy (0.2–0.5 t)' },
+                      { value: '0', label: 'Very heavy (>0.5 t)' },
+                    ]}
+                  />
+                  <SelectField
+                    id="easy-handle"
+                    label="Ease to handle, transport, store, and process?"
+                    value={logisticInputs.easyHandle}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, easyHandle: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="exist-infrastructure"
+                    label="Availability of dismantle-sort-repair infrastructure"
+                    value={logisticInputs.existInfrastructure}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, existInfrastructure: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="special-protection"
+                    label="Need special protective measures for components?"
+                    value={logisticInputs.specialProtection}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, specialProtection: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="dismantle-phase"
+                    label="Dismantling phase complexity"
+                    value={logisticInputs.dismantlePhase}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, dismantlePhase: value }))}
+                    options={[
+                      { value: '1', label: 'Straightforward' },
+                      { value: '0', label: 'Complex' },
+                    ]}
+                  />
+                  <SelectField
+                    id="storage-availability"
+                    label="Is there storage availability on-site?"
+                    value={logisticInputs.storageAvailability}
+                    onChange={(value) => setLogisticInputs((state) => ({ ...state, storageAvailability: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
                 </div>
-              ) : null}
-            </div>
-          </div>
-        </Section>
+              </Section>
 
-        <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/80 p-8 shadow-soft">
-          <div
-            className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${recommendationAccent} opacity-90`}
-            aria-hidden="true"
-          />
-          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-            <div className="space-y-5">
-              <h2 className="text-3xl font-display font-semibold text-brand-dark">End-of-life recommendation</h2>
-              <p className="text-sm text-slate-600">
-                Synthesising inspection, logistics, and performance scores to highlight the most resource-efficient pathway.
-              </p>
-              {classifySummary ? (
-                <div className="rounded-2xl border border-brand/20 bg-white/70 p-4 text-sm text-slate-600 shadow-sm">{classifySummary}</div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-brand/20 bg-white/60 p-4 text-sm text-slate-500">
-                  Upload imagery or share manual assessments to unlock richer AI-driven insights.
-                </div>
-              )}
-              <div className="grid gap-4 sm:grid-cols-3">
-                {moduleSummaries.map((module) => (
-                  <div
-                    key={module.id}
-                    className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand/70">{module.label}</p>
-                    <p className="mt-3 text-2xl font-display text-brand-dark">{module.percentage}%</p>
-                    <span className={`mt-4 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(module.status)}`}>
-                      {module.status}
-                    </span>
-                    <p className="mt-3 text-xs text-slate-500">{module.description}</p>
+              <Section
+                id="structural-performance"
+                title="Structural performance"
+                description="Evaluate documentation quality, maintenance history, adaptability, and testing feasibility."
+                isOpen={performanceOpen}
+                onToggle={() => setPerformanceOpen((value) => !value)}
+                variant="compact"
+                className="h-full"
+                meta={
+                  <div className="text-right">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Score</p>
+                    <p className="mt-1 text-xl font-display font-semibold text-slate-900">{performanceScore.percentage.toFixed(1)}%</p>
+                    <StatusBadge status={performanceScore.status} />
                   </div>
-                ))}
-              </div>
+                }
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <SelectField
+                    id="data-quality"
+                    label="Quality of available data?"
+                    value={performanceInputs.dataQuality}
+                    onChange={(value) => setPerformanceInputs((state) => ({ ...state, dataQuality: value }))}
+                    options={[
+                      { value: '0', label: 'No documentation' },
+                      { value: '1', label: 'Only drawings available' },
+                      { value: '2', label: 'Drawings and calculation report' },
+                      { value: '3', label: 'Comprehensive documentation' },
+                    ]}
+                  />
+                  <SelectField
+                    id="construction-period"
+                    label="Designed and constructed after 2005?"
+                    value={performanceInputs.constructionPeriod}
+                    onChange={(value) => setPerformanceInputs((state) => ({ ...state, constructionPeriod: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="maintenance"
+                    label="Has the structure undergone maintenance?"
+                    value={performanceInputs.maintenance}
+                    onChange={(value) => setPerformanceInputs((state) => ({ ...state, maintenance: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="purpose"
+                    label="Is the element unique for its purpose?"
+                    value={performanceInputs.purpose}
+                    onChange={(value) => setPerformanceInputs((state) => ({ ...state, purpose: value }))}
+                    options={[
+                      { value: '0', label: 'Yes' },
+                      { value: '1', label: 'No' },
+                    ]}
+                  />
+                  <SelectField
+                    id="testing"
+                    label="Is sample testing feasible?"
+                    value={performanceInputs.testing}
+                    onChange={(value) => setPerformanceInputs((state) => ({ ...state, testing: value }))}
+                    options={[
+                      { value: '1', label: 'Yes' },
+                      { value: '0', label: 'No' },
+                    ]}
+                  />
+                </div>
+              </Section>
             </div>
-            <div className={`flex h-full flex-col justify-between gap-6 rounded-3xl bg-gradient-to-br ${overallTone} p-8 shadow-xl`}>
+          </>
+        ) : (
+          <Section
+            id="life-cycle"
+            title="Life cycle assessment (LCA)"
+            description="Estimate embodied carbon through simplified cradle-to-cradle calculations."
+            isOpen={lcaOpen}
+            onToggle={() => setLcaOpen((value) => !value)}
+          >
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
               <div className="space-y-4">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
-                  Scenario
-                </span>
-                <p className="text-3xl font-display font-semibold">{suggestion.label}</p>
-                <p className="text-sm opacity-90">
-                  The blended score across all modules is <strong>{suggestion.overall}%</strong>. Continue iterating inputs to see how the recommendation evolves.
-                </p>
+                <p className="text-sm text-slate-600">Select how you prefer to input the weight of the elements.</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <ToggleCard
+                    active={lcaMode === 'weight'}
+                    title="Weight"
+                    description="Weight × quantity"
+                    onClick={() => setLcaMode('weight')}
+                  />
+                  <ToggleCard
+                    active={lcaMode === 'dimensions'}
+                    title="Dimensions"
+                    description="Volume × unit weight"
+                    onClick={() => setLcaMode('dimensions')}
+                  />
+                  <ToggleCard
+                    active={lcaMode === 'bulk'}
+                    title="Bulk weight"
+                    description="Direct total mass"
+                    onClick={() => setLcaMode('bulk')}
+                  />
+                </div>
+
+                {lcaMode === 'weight' ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <NumberField
+                      id="lca-weight"
+                      label="Weight of single element [kg]"
+                      value={lcaInputs.weight}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, weight: value }))}
+                      placeholder="150"
+                      min="0"
+                    />
+                    <NumberField
+                      id="lca-items"
+                      label="Number of items"
+                      value={lcaInputs.items}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, items: value }))}
+                      placeholder="50"
+                      min="0"
+                    />
+                  </div>
+                ) : null}
+
+                {lcaMode === 'dimensions' ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <NumberField
+                      id="lca-height"
+                      label="Height [mm]"
+                      value={lcaInputs.height}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, height: value }))}
+                      placeholder="320"
+                      min="0"
+                    />
+                    <NumberField
+                      id="lca-width"
+                      label="Width [mm]"
+                      value={lcaInputs.width}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, width: value }))}
+                      placeholder="120"
+                      min="0"
+                    />
+                    <NumberField
+                      id="lca-length"
+                      label="Length [m]"
+                      value={lcaInputs.length}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, length: value }))}
+                      placeholder="6"
+                      min="0"
+                    />
+                    <NumberField
+                      id="lca-unit-weight"
+                      label="Unit weight [kg/m³]"
+                      value={lcaInputs.unitWeight}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, unitWeight: value }))}
+                      placeholder="7850"
+                      min="0"
+                    />
+                    <NumberField
+                      id="lca-quantity"
+                      label="Quantity"
+                      value={lcaInputs.quantity}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, quantity: value }))}
+                      placeholder="12"
+                      min="0"
+                    />
+                  </div>
+                ) : null}
+
+                {lcaMode === 'bulk' ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <NumberField
+                      id="lca-bulk-weight"
+                      label="Total bulk weight [kg]"
+                      value={lcaInputs.bulkWeight}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, bulkWeight: value }))}
+                      placeholder="12000"
+                      min="0"
+                    />
+                  </div>
+                ) : null}
               </div>
-              <div className="rounded-2xl bg-white/20 p-4 text-sm backdrop-blur">
-                <p>
-                  Document assumptions and share this dashboard with your stakeholders to support circular construction decisions and transparent communication.
-                </p>
+
+              <div className="space-y-5">
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-inner">
+                  <p className="text-sm font-semibold text-slate-700">Emission factors (kgCO₂e/kg)</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <NumberField
+                      id="lca-ca1a3"
+                      label="Product stage (A1-A3)"
+                      value={lcaInputs.cA1A3}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, cA1A3: value }))}
+                      placeholder="1.13"
+                    />
+                    <NumberField
+                      id="lca-cc1c4"
+                      label="End-of-life (C1-C4)"
+                      value={lcaInputs.cC1C4}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, cC1C4: value }))}
+                      placeholder="0.018"
+                    />
+                    <NumberField
+                      id="lca-cd"
+                      label="Benefits beyond (D)"
+                      value={lcaInputs.cD}
+                      onChange={(value) => setLcaInputs((state) => ({ ...state, cD: value }))}
+                      placeholder="-0.413"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={calculateCarbon}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-700"
+                >
+                  Calculate carbon impact
+                </button>
+
+                {lcaResult ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-inner">
+                    <p className="text-sm font-semibold text-slate-700">Results</p>
+                    <dl className="mt-4 grid gap-4 text-sm text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <dt>Total weight</dt>
+                        <dd className="font-semibold text-slate-900">{lcaResult.totalWeight} kg</dd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <dt>Product stage (A1-A3)</dt>
+                        <dd className="font-semibold text-slate-900">{lcaResult.product} kgCO₂e</dd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <dt>End-of-life (C1-C4)</dt>
+                        <dd className="font-semibold text-slate-900">{lcaResult.endOfLife} kgCO₂e</dd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <dt>Benefits beyond (D)</dt>
+                        <dd className="font-semibold text-slate-900">{lcaResult.recovery} kgCO₂e</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
               </div>
             </div>
-          </div>
-        </section>
+          </Section>
+        )}
       </main>
     </div>
   );
 }
+
 
 export default App;
