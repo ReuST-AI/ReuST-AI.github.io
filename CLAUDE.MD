@@ -1,5 +1,18 @@
 # CLAUDE.MD
 
+## ⚠️ IMPORTANT: Architecture Refactoring
+
+**This application has been refactored from vanilla JavaScript to React + Vite + TypeScript** (Version 2.0.0).
+
+See **[REFACTORING_GUIDE.md](./REFACTORING_GUIDE.md)** for complete details on the new architecture, implementation status, and next steps.
+
+### Current Status
+✅ **Completed**: Core architecture, type system, state management, utilities, hooks, and UI component framework
+⏳ **In Progress**: Feature component implementation
+📚 **Documentation**: See REFACTORING_GUIDE.md for comprehensive details
+
+---
+
 ## Project Overview
 
 **ReuST** (Reuse Steel) is a web-based decision-making framework for evaluating efficient end-of-life scenarios of structural steel elements. The application helps assess the reuse potential of existing steel structures by considering:
@@ -11,30 +24,67 @@
 
 This project is a web implementation based on the Python code written by [Mussie Birhane](https://github.com/MussieBirhane). See the [original framework](https://github.com/MussieBirhane/decision-making-framework) for more information.
 
-## Tech Stack
+## Tech Stack (v2.0.0)
 
-- **Frontend Framework**: Vanilla JavaScript with p5.js
-- **Machine Learning**: TensorFlow.js
-- **UI Libraries**:
-  - p5.js v1.4.1 for graphics and interaction
-  - Font Awesome for icons
-  - Google Fonts (Roboto Condensed)
+- **Frontend Framework**: React 18.3.1
+- **Build Tool**: Vite 6.0.3
+- **Language**: TypeScript 5.6.3
+- **State Management**: Zustand 4.5.5
+- **Machine Learning**: TensorFlow.js 4.21.0
+- **Styling**: CSS Modules + Global CSS
+- **Fonts**: Google Fonts (Roboto Condensed)
 - **Deployment**: GitHub Pages
 
-## Project Structure
+### Previous Version (v1.0.0)
+- Vanilla JavaScript with p5.js
+- Direct DOM manipulation
+- Global state in variables
+- See `index-old.html` and `sketch.js` (legacy files)
+
+## Project Structure (v2.0.0)
 
 ```
 /
-├── index.html          # Main HTML structure with all UI components
-├── sketch.js           # Core JavaScript logic and ML model integration
-├── style.css           # Styling for the application
-├── README.md           # Basic project information
-├── models/             # TensorFlow.js model files
+├── src/                   # Source code (TypeScript + React)
+│   ├── components/        # React components
+│   │   ├── ui/           # Reusable UI components
+│   │   │   ├── Dropdown.tsx & .module.css
+│   │   │   └── FormInput.tsx & .module.css
+│   │   └── features/     # Feature-specific components (to be implemented)
+│   ├── hooks/            # Custom React hooks
+│   │   ├── useMLModels.ts
+│   │   ├── useImageClassification.ts
+│   │   └── useDisclaimer.ts
+│   ├── store/            # Zustand state management
+│   │   └── index.ts
+│   ├── types/            # TypeScript type definitions
+│   │   └── index.ts
+│   ├── utils/            # Pure utility functions
+│   │   ├── calculations.ts  # Performance & LCA calculations
+│   │   ├── ml.ts            # TensorFlow.js utilities
+│   │   └── validation.ts    # Form validation
+│   ├── constants/        # Configuration constants
+│   │   └── index.ts
+│   ├── styles/           # Global styles
+│   │   └── global.css
+│   ├── App.tsx           # Root component
+│   ├── main.tsx          # Application entry point
+│   └── vite-env.d.ts     # Vite type declarations
+├── models/               # TensorFlow.js model files (public)
 │   ├── CorrosionModel/
 │   ├── ConnectionModel/
 │   └── DamageModel/
-├── assets/             # Static assets (images, favicon, etc.)
-└── .vscode/            # VS Code configuration
+├── assets/               # Static assets (public)
+├── index.html            # Vite HTML template
+├── index-old.html        # Legacy vanilla JS version (preserved)
+├── sketch.js             # Legacy JavaScript (preserved)
+├── style.css             # Legacy CSS (preserved)
+├── package.json          # Dependencies
+├── tsconfig.json         # TypeScript configuration
+├── vite.config.ts        # Vite configuration
+├── REFACTORING_GUIDE.md  # Detailed refactoring documentation
+├── CLAUDE.MD             # This file
+└── README.md             # Basic project information
 ```
 
 ## Core Components
@@ -192,3 +242,84 @@ This is a static site hosted on GitHub Pages at: https://reust-ai.github.io/
 ## Current Branch
 
 Development is happening on branch: `claude/update-claude-md-Z9bpy`
+
+
+## New Architecture (v2.0.0)
+
+### Key Benefits
+- **Type Safety**: Full TypeScript coverage prevents runtime errors
+- **Maintainability**: Clean separation of concerns and modular structure
+- **State Management**: Centralized Zustand store with predictable updates
+- **Reusability**: Component-based architecture with reusable UI elements
+- **Testability**: Pure functions and isolated components
+- **Developer Experience**: Hot module replacement, fast builds, better tooling
+
+### Core Modules
+
+#### 1. Type System (`src/types/index.ts`)
+Complete TypeScript definitions for all data structures including ML models, form data, assessments, and state.
+
+#### 2. Constants (`src/constants/index.ts`)
+Centralized configuration for:
+- ML model paths and class names
+- Performance thresholds (70%, 75%, 80%)
+- Calculation weights
+- Form options
+- UI text
+
+#### 3. Utilities
+- **calculations.ts**: Pure functions for performance scoring and LCA
+- **ml.ts**: TensorFlow.js model loading and image classification
+- **validation.ts**: Form validation logic
+
+#### 4. State Management (`src/store/index.ts`)
+Zustand store managing:
+- Image data and classification results
+- Form data for all sections
+- Assessment results
+- ML models
+- UI state
+
+#### 5. Custom Hooks
+- **useMLModels**: Loads and manages TensorFlow.js models
+- **useImageClassification**: Handles file uploads and classification
+- **useDisclaimer**: Manages disclaimer display
+
+#### 6. UI Components
+- **Dropdown**: Reusable accordion component
+- **FormInput**: Select, number, checkbox, and slider inputs
+- Additional components in development (see REFACTORING_GUIDE.md)
+
+### Development Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Development server with hot reload
+npm run dev
+
+# Type checking
+npm run type-check
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Next Steps
+
+See **[REFACTORING_GUIDE.md](./REFACTORING_GUIDE.md)** for:
+- Complete implementation status
+- Detailed architecture patterns
+- Feature component implementation guide
+- Testing and deployment instructions
+
+---
+
+**Version**: 2.0.0 (React + Vite + TypeScript)  
+**Last Updated**: 2025-12-30  
+**Original Version**: See `index-old.html` and `sketch.js`
+

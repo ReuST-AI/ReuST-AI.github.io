@@ -1,0 +1,72 @@
+.inputItem {
+  max-width: 50px;
+  padding-right: 30px;
+  display: table-cell;
+  vertical-align: bottom;
+}
+
+.inputItem label {
+  padding-bottom: 5px;
+  padding-top: 10px;
+  display: block;
+}
+
+.inputItem select,
+.inputItem input[type='number'] {
+  border: none;
+  width: 100%;
+  height: 50px;
+  border-radius: 3px;
+  color: white;
+  padding: 10px;
+  font-size: medium;
+  font-family: 'Roboto Condensed';
+  background-color: rgb(71, 91, 118);
+}
+
+.inputItem input[type='number'] {
+  height: 35px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.checkboxLabel {
+  padding-bottom: 5px;
+  padding-top: 10px;
+  display: block;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  vertical-align: middle;
+  position: relative;
+  bottom: 2px;
+  transform: scale(1.5);
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.sliderWrapper {
+  position: relative;
+  margin-top: 10px;
+}
+
+.sliderLabel {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 100%;
+  color: white;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.slider {
+  width: 100%;
+}
+
+.sliderRange {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 12px;
+}
