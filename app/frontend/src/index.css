@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply h-full w-full;
+  }
+
+  body {
+    @apply bg-white text-gray-900 dark:bg-primary-500 dark:text-white;
+    font-family: 'Roboto Condensed', system-ui, sans-serif;
+  }
+
+  #root {
+    @apply h-full;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
